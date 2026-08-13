@@ -362,7 +362,7 @@
  <!-- Media catalog first, then interactions (lightbox binds after galleries hydrate) -->
  <script src="js/site-media.js?v=20260801p3f"></script>
  <!-- i18n: runtime first; dictionary deferred for LCP -->
- <script src="js/i18n.js?v=20260801p3f"></script>
+ <script src="js/i18n.js?v=20260813w1"></script>
  <script src="js/site.js?v=20260811event"></script>
  <script>
  (function () {
@@ -370,7 +370,7 @@
      if (window.__mdlI18nData) return;
      window.__mdlI18nData = true;
      var s = document.createElement("script");
-     s.src = "js/i18n-data.js?v=20260811evstr";
+     s.src = "js/i18n-data.js?v=20260813w1";
      s.onload = function () {
        if (window.I18N && window.I18N.apply) {
          try { window.I18N.apply(window.I18N.lang || "pt"); } catch (e) {}
@@ -390,7 +390,7 @@
  <script src="js/youtube-facade.js?v=20260713m"></script>
 <!-- sprint5-scripts -->
  <script src="js/site-config.js?v=20260804email"></script>
- <script src="js/seo.js?v=20260807eslp"></script>
+ <script src="js/seo.js?v=20260813w1"></script>
  <script src="js/analytics.js?v=20260804email"></script>
 <!-- /sprint5-scripts -->
 </body>

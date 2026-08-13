@@ -8,21 +8,33 @@
   </url>
   <url>
     <loc>https://www.mansaodolago.com/en/</loc>
-    <lastmod>2026-07-21</lastmod>
+    <lastmod>2026-08-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
     <loc>https://www.mansaodolago.com/es/</loc>
-    <lastmod>2026-08-07</lastmod>
+    <lastmod>2026-08-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
   <url>
     <loc>https://www.mansaodolago.com/hospedagem.html</loc>
-    <lastmod>2026-07-18</lastmod>
+    <lastmod>2026-08-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://www.mansaodolago.com/en/hospedagem.html</loc>
+    <lastmod>2026-08-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.mansaodolago.com/es/hospedagem.html</loc>
+    <lastmod>2026-08-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.mansaodolago.com/eventos.html</loc>
@@ -62,7 +74,7 @@
   </url>
   <url>
     <loc>https://www.mansaodolago.com/faq.html</loc>
-    <lastmod>2026-07-18</lastmod>
+    <lastmod>2026-08-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

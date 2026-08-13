@@ -336,9 +336,12 @@
   inject(lodging);
   inject(website);
 
-  /* FAQPage schema from visible Q&A (faq.html) */
+  /* FAQPage schema from visible Q&A (faq.html). Rebuild after i18n. */
   var page = document.documentElement.getAttribute("data-page") || "";
-  if (page === "faq") {
+  function injectFaqSchema() {
+    if (page !== "faq") return;
+    var old = document.querySelector("script[data-mdl-faq-schema]");
+    if (old) old.parentNode.removeChild(old);
     var entities = [];
     document.querySelectorAll(".faq-item").forEach(function (item) {
       var qEl = item.querySelector("summary");
@@ -356,14 +359,19 @@
         },
       });
     });
-    if (entities.length) {
-      inject({
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: entities,
-      });
-    }
+    if (!entities.length) return;
+    var s = document.createElement("script");
+    s.type = "application/ld+json";
+    s.setAttribute("data-mdl-faq-schema", "1");
+    s.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: entities,
+    });
+    document.head.appendChild(s);
   }
+  injectFaqSchema();
+  document.addEventListener("mdl:langchange", injectFaqSchema);
 
   /* BreadcrumbList for inner pages (not site root) */
   if (base && path !== "/" && file && !isHomePath) {

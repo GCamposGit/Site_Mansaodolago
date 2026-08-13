@@ -24,7 +24,50 @@
     return window.I18N_STRINGS || {};
   }
 
+  function pathLang() {
+    var p = (window.location.pathname || "").replace(/\\/g, "/");
+    if (/\/en(\/|$)/i.test(p)) return "en";
+    if (/\/es(\/|$)/i.test(p)) return "es";
+    return null;
+  }
+
+  function stayUrlForLang(lang) {
+    var p = (window.location.pathname || "").replace(/\\/g, "/");
+    var onStay = /hospedagem\.html$/i.test(p);
+    var onEnHome = /\/en\/?$/i.test(p) || /\/en\/index\.html$/i.test(p);
+    var onEsHome = /\/es\/?$/i.test(p) || /\/es\/index\.html$/i.test(p);
+    if (!onStay && !onEnHome && !onEsHome && !pathLang()) return null;
+    if (onStay) {
+      if (/\/en\/hospedagem\.html$/i.test(p)) {
+        if (lang === "en") return null;
+        if (lang === "es") return "../es/hospedagem.html";
+        return "../hospedagem.html";
+      }
+      if (/\/es\/hospedagem\.html$/i.test(p)) {
+        if (lang === "es") return null;
+        if (lang === "en") return "../en/hospedagem.html";
+        return "../hospedagem.html";
+      }
+      if (lang === "en") return "en/hospedagem.html";
+      if (lang === "es") return "es/hospedagem.html";
+      return null;
+    }
+    if (onEnHome) {
+      if (lang === "en") return null;
+      if (lang === "es") return "../es/";
+      return "../";
+    }
+    if (onEsHome) {
+      if (lang === "es") return null;
+      if (lang === "en") return "../en/";
+      return "../";
+    }
+    return null;
+  }
+
   function detect() {
+    var fromPath = pathLang();
+    if (fromPath) return fromPath;
     var params = new URLSearchParams(window.location.search);
     var q = (params.get("lang") || "").toLowerCase();
     if (SUPPORTED.indexOf(q) !== -1) return q;
@@ -202,6 +245,11 @@
       btn.setAttribute("data-lang-bound", "1");
       btn.addEventListener("click", function () {
         var lang = btn.getAttribute("data-set-lang");
+        var dest = stayUrlForLang(lang);
+        if (dest) {
+          window.location.href = dest;
+          return;
+        }
         var url = new URL(window.location.href);
         url.searchParams.set("lang", lang);
         window.history.replaceState({}, "", url.toString());

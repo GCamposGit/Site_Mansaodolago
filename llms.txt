@@ -7,6 +7,8 @@
 - US English ads landing: https://www.mansaodolago.com/en/
 - Spanish ads landing (ES / LatAm): https://www.mansaodolago.com/es/
 - Stays (hospedagem): https://www.mansaodolago.com/hospedagem.html
+- Stays in English: https://www.mansaodolago.com/en/hospedagem.html
+- Stays in Spanish: https://www.mansaodolago.com/es/hospedagem.html
 - Nature: https://www.mansaodolago.com/natureza.html
 - Events: https://www.mansaodolago.com/eventos.html
 - Filming / photo location: https://www.mansaodolago.com/filmagens.html
