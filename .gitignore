@@ -1,0 +1,57 @@
+# —— Secrets (never commit) ——
+api/config.php
+**/.htpasswd
+.env
+.env.*
+
+# Guest/event guide i18n — street address + access notes (Hostinger + local only)
+js/private-guest-i18n.js
+js/private-events-i18n.js
+
+# —— Private ops (server-only / local) ——
+# Post-booking guest guides (secret URL tokens, Wi-Fi, address)
+p/
+# Strategy docs, ads guides, blog research
+02-docs/
+# One-off Python tools
+scripts/
+03-scripts/
+.grok/
+
+# —— Backups & dumps ——
+0. Backup*/
+0. Backup Site/
+0. Backup old Wordpress/
+Backup/
+Backup*/
+*.sql
+*.sql.gz
+*.tar.gz
+
+# —— Source media (too heavy; production uses images/) ——
+01-assets/
+assets/photos/
+assets/photos_new/
+assets/videos/
+videos/youtube-clips/
+
+# —— OS / editor ——
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/
+
+# —— Python ——
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# —— Junk / leftovers ——
+*.bak
+*.broken*
+js/*.broken*
+site - Copia.webmanifest

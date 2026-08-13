@@ -1,0 +1,92 @@
+# Mansao do Lago — Apache (Hostinger)
+# Canonical host: https://www.mansaodolago.com
+
+# Force UTF-8 for HTML/text (avoids MansÃ£o mojibake)
+AddDefaultCharset UTF-8
+<IfModule mod_mime.c>
+  AddCharset UTF-8 .html .css .js .json .txt .xml .svg
+</IfModule>
+
+ErrorDocument 404 /404.html
+
+# HTTPS + single hostname (www) — one 301 hop when possible
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Block internal/dev folders if a mass FTP upload included them.
+  # Matches repo layout (01-assets, 02-docs, scripts) and legacy names.
+  RewriteRule ^01-assets(/|$) - [F,L]
+  RewriteRule ^02-docs(/|$) - [F,L]
+  RewriteRule ^03-scripts(/|$) - [F,L]
+  RewriteRule ^scripts(/|$) - [F,L]
+  RewriteRule ^0\. - [F,L]
+  RewriteRule ^assets(/|$) - [F,L]
+  RewriteRule ^docs(/|$) - [F,L]
+  RewriteRule ^Backup - [F,L]
+
+  # Already correct host + HTTPS → do nothing
+  # Otherwise send everyone to https://www.mansaodolago.com/...
+  RewriteCond %{HTTPS} !=on [OR]
+  RewriteCond %{HTTP_HOST} !^www\.mansaodolago\.com$ [NC]
+  RewriteRule ^ https://www.mansaodolago.com%{REQUEST_URI} [L,R=301]
+
+  # Canonical home URL: /index.html → / (SEO + Lighthouse)
+  RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
+  RewriteRule ^index\.html$ / [R=301,L]
+</IfModule>
+
+# Cache static assets. HTML must revalidate (Safari/iOS caches aggressively).
+# CSS/JS use ?v= cache-bust — safe to cache long at CDN/browser.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/xml "access plus 0 seconds"
+  ExpiresByType application/xml "access plus 0 seconds"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType image/png "access plus 30 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType image/avif "access plus 30 days"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType application/font-woff2 "access plus 1 year"
+  ExpiresByType text/css "access plus 30 days"
+  ExpiresByType application/javascript "access plus 30 days"
+  ExpiresByType video/mp4 "access plus 30 days"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "^(robots\.txt|sitemap\.xml|llms\.txt)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  <FilesMatch "\.(woff2|woff)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(webp|jpg|jpeg|png|svg|mp4)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set X-Frame-Options "SAMEORIGIN"
+  /* HSTS — prefer also enabling at Cloudflare edge if HTML is proxied */
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  /*
+   * Note: CSP-Report-Only / COOP removed from default ship after v3 —
+   * third-party Google cookie Issues (not CSP) drove BP 77. Re-add CSP
+   * carefully via Cloudflare after monitoring. object-src none still recommended later.
+   */
+</IfModule>
+
+# Ensure WebP is served with correct type
+<IfModule mod_mime.c>
+  AddType image/webp .webp
+  AddType font/woff2 .woff2
+  AddType video/mp4 .mp4
+</IfModule>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html data-page="404" lang="pt-BR">
+<head>
+ <meta charset="UTF-8">
+ <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+ <meta http-equiv="Pragma" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+ <title data-i18n-doc="meta.404.title">Página não encontrada | Mansão do Lago</title>
+ <meta name="robots" content="noindex">
+ <meta name="theme-color" content="#0D3B2E">
+ <link rel="icon" href="favicon.svg?v=mlogo" type="image/svg+xml">
+  <link rel="preload" href="fonts/font-1.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css?v=20260801p3f" />
+ <link rel="stylesheet" href="css/tailwind-built.min.css?v=20260801p3f" />
+ <link rel="stylesheet" href="css/style.min.css?v=20260804email">
+ <meta property="og:type" content="website">
+<!-- sprint5-head -->
+ <link rel="icon" href="favicon.svg?v=mlogo" type="image/svg+xml">
+ <link rel="icon" href="favicon-32.png?v=mlogo" type="image/png" sizes="32x32">
+ <link rel="apple-touch-icon" href="apple-touch-icon.png?v=mlogo">
+ <link rel="manifest" href="site.webmanifest?v=mlogo">
+ <meta name="theme-color" content="#0D3B2E">
+<!-- /sprint5-head -->
+</head>
+<body class="bg-[#F8F5F0] text-[#2C2C2C] min-h-screen flex flex-col">
+ <header class="site-header is-scrolled">
+ <div class="site-header__inner">
+ <a href="index.html" class="site-logo">Mansão do Lago</a>
+ <a href="index.html" class="btn-primary site-header__cta" style="display:inline-flex" data-i18n="nav.home">Início</a>
+ </div>
+ </header>
+ <main class="flex-1 flex items-center justify-center px-6 pt-28 pb-16 text-center">
+ <div class="max-w-lg">
+ <p class="section-label">404</p>
+ <h1 class="text-4xl md:text-5xl heading-serif text-[#0D3B2E] mb-4" data-i18n="err.404.h1">Esta página não foi encontrada.</h1>
+ <p class="text-[#5A5A5A] mb-10" data-i18n="err.404.p">O caminho pode ter mudado. Volte ao início ou fale conosco pelo WhatsApp.</p>
+ <div class="flex flex-col sm:flex-row gap-4 justify-center">
+ <a href="index.html" class="btn-primary" data-i18n="cta.home">Ir para o início</a>
+ <a href="contato.html" class="btn-secondary" data-i18n="nav.contato">Contato</a>
+ </div>
+ </div>
+ </main>
+<!-- i18n: runtime first; dictionary deferred for LCP -->
+ <script src="js/i18n.js?v=20260801p3f"></script>
+ <script src="js/site.js?v=20260801p3f"></script>
+ <script>
+ (function () {
+   function loadI18nData() {
+     if (window.__mdlI18nData) return;
+     window.__mdlI18nData = true;
+     var s = document.createElement("script");
+     s.src = "js/i18n-data.js?v=20260804email";
+     s.onload = function () {
+       if (window.I18N && window.I18N.apply) {
+         try { window.I18N.apply(window.I18N.lang || "pt"); } catch (e) {}
+       }
+       document.dispatchEvent(new Event("mdl:langchange"));
+     };
+     document.body.appendChild(s);
+   }
+   if ("requestIdleCallback" in window) requestIdleCallback(loadI18nData, { timeout: 2500 });
+   else setTimeout(loadI18nData, 1200);
+ })();
+ </script>
+<!-- sprint5-scripts -->
+ <script src="js/site-config.js?v=20260804email"></script>
+ <script src="js/seo.js?v=20260807eslp"></script>
+ <script src="js/analytics.js?v=20260804email"></script>
+<!-- /sprint5-scripts -->
+</body>
+</html>

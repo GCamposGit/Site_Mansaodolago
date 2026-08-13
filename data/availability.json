@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "blocked": [],
+  "updated": null,
+  "source": "placeholder",
+  "count": 0,
+  "message": "Placeholder only. After api/config.php has a real Airbnb iCal URL, open /api/availability.php to populate this cache."
+}

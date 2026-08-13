@@ -1,0 +1,57 @@
+# Mansão do Lago — robots.txt
+# Canonical site: https://www.mansaodolago.com
+#
+# Folder names in the local repo use numeric prefixes (01-assets, 02-docs).
+# Disallow both the current names and legacy names in case a mass FTP
+# upload includes everything. Prefer never uploading these folders at all
+# (see README + 02-docs/14_DEPLOY_HOSTINGER.md). Apache also 403s them in .htaccess.
+
+User-agent: *
+Allow: /
+
+# —— Internal / non-public (current repo layout) ——
+Disallow: /01-assets/
+Disallow: /02-docs/
+Disallow: /03-scripts/
+Disallow: /scripts/
+# Backup folders (prefix "0." — matches "0. Backup Site", "0. Backup old Wordpress", …)
+Disallow: /0.
+
+# —— Legacy paths (pre-rename; keep if still present on server) ——
+Disallow: /assets/
+Disallow: /docs/
+Disallow: /Backup
+Disallow: /Backup%20old%20Wordpress/
+Disallow: /Backup%20Site/
+
+# Secrets & private
+Disallow: /api/config.php
+# Confirmed-client guides (secret URLs — never index)
+Disallow: /p/
+
+# Blog is public
+Allow: /blog/
+
+# Common AI / search crawlers (explicit allow is optional; * already allows)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+Sitemap: https://www.mansaodolago.com/sitemap.xml

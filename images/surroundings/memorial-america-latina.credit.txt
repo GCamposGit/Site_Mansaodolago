@@ -1,0 +1,3 @@
+source=Wikimedia Commons
+file=File:Memorial da América Latina.jpg
+url=https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Memorial_da_Am%C3%A9rica_Latina.jpg/1920px-Memorial_da_Am%C3%A9rica_Latina.jpg

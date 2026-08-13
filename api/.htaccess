@@ -1,0 +1,11 @@
+# Protect secrets
+<Files "config.php">
+  Require all denied
+</Files>
+<Files "config.sample.php">
+  Require all denied
+</Files>
+# Cron entrypoint is CLI-only (block browser access)
+<Files "cron.php">
+  Require all denied
+</Files>

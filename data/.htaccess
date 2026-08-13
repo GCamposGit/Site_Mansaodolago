@@ -1,0 +1,5 @@
+# Public JSON cache is readable; prevent script execution
+Options -Indexes
+<FilesMatch "\.(php|phtml|php3|php4|php5|phps)$">
+  Require all denied
+</FilesMatch>
