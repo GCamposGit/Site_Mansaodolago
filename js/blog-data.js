@@ -38,6 +38,25 @@ window.SITE_BLOG = {
    */
   posts: [
     {
+      slug: "onde-ficar-perto-allianz-parque-perdizes",
+      title:
+        "Onde ficar perto do Allianz Parque (Nubank Parque) em Perdizes",
+      excerpt:
+        "Allianz Parque agora é Nubank Parque. Como escolher base em Perdizes para show ou jogo sem dormir na porta da arena, e o que muda se o compromisso for no Pacaembu.",
+      category: "hospedagem",
+      date: "2026-08-14",
+      dateLabel: "14 de agosto de 2026",
+      image: "../images/surroundings/mansao-do-lago-entorno-allianz-parque-01.jpg",
+      imageAlt: "Arena da zona oeste de São Paulo, ainda buscada como Allianz Parque",
+      featured: true,
+      keywords: [
+        "onde ficar perto do Allianz Parque",
+        "Nubank Parque hospedagem",
+        "hotel Perdizes show",
+        "Pacaembu onde ficar",
+      ],
+    },
+    {
       slug: "eventos-corporativos-residencia-perdizes",
       title:
         "Eventos corporativos em residência: quando o offsite cabe em uma casa (e quando não)",
