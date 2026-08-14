@@ -64,17 +64,27 @@ Copy `api/config.sample.php` → `api/config.php` locally. Never commit `config.
 
 ---
 
-## Deploy (Hostinger `public_html`)
+## Deploy (GitHub Actions → Hostinger)
 
-**Upload:** HTML, `blog/`, `css/`, `js/`, `images/`, `fonts/`, `en/`, `es/`, `api/availability.php`, `api/cron.php`, `api/.htaccess`, `data/`, favicons, `robots.txt`, `sitemap.xml`, `llms.txt`, `site.webmanifest`, `.htaccess`.
+Push to `master` (or run **Actions → Deploy to Hostinger → Run workflow**).  
+The workflow `.github/workflows/deploy-hostinger.yml` uploads over **FTPS** into `public_html/`.
 
-**Do not upload from Git:** `api/config.php` is created **on the server** from the sample. Keep the existing production `config.php`.
+**GitHub secrets** (Settings → Secrets and variables → Actions):
 
-**Do not upload:** `p/` from a public clone (deploy guides separately), `02-docs/`, `scripts/`, backups.
+| Secret | Value |
+|--------|--------|
+| `FTP_SERVER` | FTP hostname from hPanel → Files → FTP Accounts |
+| `FTP_USERNAME` | FTP user |
+| `FTP_PASSWORD` | FTP password |
+| `FTP_SERVER_DIR` | Optional. Default `public_html/`. Use `./` if the FTP user already opens inside `public_html`. |
 
-**Private guides:** keep `p/` and `p/js/` on Hostinger. After the guides load scripts from `p/js/`, delete `js/private-*.js` from the public `/js/` folder.
+**Never overwritten on the server:** `api/config.php`, `p/` (guest guides), `js/private-*.js`.
 
-After HTML/JS/CSS changes: purge Cloudflare cache.
+**Not uploaded:** `02-docs/`, `scripts/`, `01-assets/`, backups, repo markdown, preview videos.
+
+After HTML/JS/CSS changes: purge the Cloudflare cache.
+
+First run uploads the whole public site (can take 20–60 min). Later runs only sync files that changed.
 
 ---
 

@@ -1,0 +1,80 @@
+# Deploy the public site to Hostinger over FTPS on every push to master.
+# Secrets (Settings → Secrets and variables → Actions):
+#   FTP_SERVER    — hostname from hPanel → Files → FTP Accounts (not the website URL)
+#   FTP_USERNAME  — FTP user
+#   FTP_PASSWORD  — FTP password
+# Optional:
+#   FTP_SERVER_DIR — remote folder, must end with /. Default: public_html/
+#     Use ./ if this FTP user is already jailed inside public_html.
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: List file changes only (do not upload)
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: FTPS → public_html
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Upload to Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          security: loose
+          timeout: 120000
+          server-dir: ${{ secrets.FTP_SERVER_DIR || 'public_html/' }}
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/.gitignore
+            **/.gitattributes
+            **/.grok/**
+            **/node_modules/**
+            README.md
+            ARCHITECTURE.md
+            SECURITY.md
+            **/p/**
+            **/p/**/**
+            api/config.php
+            js/private-guest-i18n.js
+            js/private-events-i18n.js
+            **/02-docs/**
+            **/scripts/**
+            **/03-scripts/**
+            **/01-assets/**
+            **/0. Backup*/**
+            videos/youtube-clips/**
+            videos/hero-lago-loop-preview.mp4
+            videos/hero-lago-loop-preview-v2.mp4
+            videos/hero-lago-loop-preview-v3.mp4
+            videos/hero-lago-loop-preview-v4.mp4
+            videos/hero-lago-source-crop-right.jpg
+            videos/hero-lago-source-mild-crop.jpg
+            **/*.md
+            **/*.bak
+            **/__pycache__/**
