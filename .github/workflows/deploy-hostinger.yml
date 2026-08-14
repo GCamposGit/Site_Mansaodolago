@@ -6,7 +6,7 @@
 # Optional:
 #   FTP_SERVER_DIR — remote folder, must end with /. Default: public_html/
 #     Use ./ if this FTP user is already jailed inside public_html.
-name: Deploy to Hostinger
+name: Deploy site to Hostinger
 
 on:
   push:
