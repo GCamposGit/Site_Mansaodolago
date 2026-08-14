@@ -76,7 +76,7 @@ The workflow `.github/workflows/deploy-hostinger.yml` uploads over **FTPS** into
 | `FTP_SERVER` | FTP hostname from hPanel → Files → FTP Accounts |
 | `FTP_USERNAME` | FTP user |
 | `FTP_PASSWORD` | FTP password |
-| `FTP_SERVER_DIR` | Optional. Default `public_html/`. Use `./` if the FTP user already opens inside `public_html`. |
+| `FTP_SERVER_DIR` | Optional **variable** (not secret). Default `domains/mansaodolago.com/public_html/`. Use `./` if the FTP user already opens inside the live site folder. |
 
 **Never overwritten on the server:** `api/config.php`, `p/` (guest guides), `js/private-*.js`.
 

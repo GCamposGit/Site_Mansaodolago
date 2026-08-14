@@ -3,9 +3,10 @@
 #   FTP_SERVER    — hostname from hPanel → Files → FTP Accounts (not the website URL)
 #   FTP_USERNAME  — FTP user
 #   FTP_PASSWORD  — FTP password
-# Optional:
-#   FTP_SERVER_DIR — remote folder, must end with /. Default: public_html/
-#     Use ./ if this FTP user is already jailed inside public_html.
+# Optional repo variable (not secret):
+#   FTP_SERVER_DIR — remote folder, must end with /.
+#   Hostinger websites usually live at domains/<domain>/public_html/
+#   Use ./ only if this FTP user already opens inside that folder.
 name: Deploy site to Hostinger
 
 on:
@@ -27,7 +28,7 @@ permissions:
 
 jobs:
   deploy:
-    name: FTPS → public_html
+    name: FTPS → Hostinger web root
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -45,6 +46,7 @@ jobs:
           echo "FTP_SERVER set: $HAS_SERVER"
           echo "FTP_USERNAME set: $HAS_USER"
           echo "FTP_PASSWORD set: $HAS_PASS"
+          echo "Remote dir: domains/mansaodolago.com/public_html/ (or vars.FTP_SERVER_DIR)"
           if [ "$HAS_SERVER" != "true" ] || [ "$HAS_USER" != "true" ] || [ "$HAS_PASS" != "true" ]; then
             echo "::error::A secret is missing or named differently. Required names: FTP_SERVER, FTP_USERNAME, FTP_PASSWORD"
             exit 1
@@ -59,7 +61,7 @@ jobs:
           protocol: ftps
           security: loose
           timeout: 120000
-          server-dir: ${{ secrets.FTP_SERVER_DIR || 'public_html/' }}
+          server-dir: ${{ vars.FTP_SERVER_DIR || 'domains/mansaodolago.com/public_html/' }}
           dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
           exclude: |
             **/.git*
