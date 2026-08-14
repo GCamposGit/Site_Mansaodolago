@@ -7,9 +7,9 @@ Identificações por comparação visual com flora de paisagismo tropical brasil
 | `plants/jeriva-01.jpg` | Jerivá (5 exemplares) | *Syagrus romanzoffiana* |
 | `plants/areca-01.jpg` | Areca-bambu | *Dypsis lutescens* |
 | `plants/guaimbe-philodendron-selloum-01.jpg` | Guaimbê | *Thaumatophyllum bipinnatifidum* |
-| `plants/philodendron-xanadu-01.jpg` | Xanadu | *Philodendron xanadu* (+ *Monstera adansonii*) |
+| `plants/philodendron-xanadu-01.jpg` | Xanadu | *Thaumatophyllum xanadu* (*Philodendron xanadu*) (+ *Monstera adansonii*) |
 | `plants/monstera-adansonii-01.jpg` | Monstera adansonii | *Monstera adansonii*, *Cuphea*, *Cordyline* |
-| `plants/rhaphidophora-tetrasperma-01.jpg` | Mini monstra | *Rhaphidophora tetrasperma*, *Nephrolepis*, *Tradescantia pallida*, *Epiphyllum anguliger* |
+| `plants/rhaphidophora-tetrasperma-01.jpg` | Mini monstera | *Rhaphidophora tetrasperma*, *Nephrolepis*, *Tradescantia pallida*, *Epiphyllum anguliger* |
 | `plants/syngonium-anthurium-01.jpg` | Singônio · Antúrio | *Syngonium podophyllum*, *Anthurium andraeanum* |
 | `plants/cordyline-fruticosa-01.jpg` | Dracena-vermelha | *Cordyline fruticosa*, *Dracaena marginata*, *Neoregelia* |
 | `plants/strelitzia-cordyline-01.jpg` | Strelitzia | *Strelitzia nicolai* (ou afim), *Cordyline* |
@@ -24,11 +24,11 @@ Identificações por comparação visual com flora de paisagismo tropical brasil
 | `plants/bromelia-offsets-01.jpg` | Bromélia (filhotes) | Bromeliaceae |
 | `plants/beaucarnea-pata-elefante-01.jpg` | Pata-de-elefante | *Beaucarnea recurvata* |
 | `plants/cycas-revoluta-01.jpg` | Sagu-de-jardim | *Cycas revoluta* |
-| `plants/colocasia-orellha-elefante-01.jpg` | Orelha-de-elefante | *Colocasia* / *Alocasia*, *Dypsis* |
+| `plants/colocasia-orellha-elefante-01.jpg` | Orelha-de-elefante | *Colocasia esculenta*, *Dypsis* |
 | `plants/colocasia-black-magic-01.jpg` | Taioba-preta | *Colocasia esculenta* ‘Black Magic’ |
-| `plants/alocasia-colocasia-jardim-01.jpg` | Taioba | *Colocasia* / *Alocasia*, *Cordyline*, *Tibouchina* |
+| `plants/alocasia-colocasia-jardim-01.jpg` | Alocasia | *Alocasia macrorrhizos*, *Cordyline*, *Pleroma heteromallum* |
 | `plants/nandina-domestica-01.jpg` | Nandina | *Nandina domestica* |
-| `plants/tibouchina-prata-01.jpg` | Orelha-de-onça (prata) | *Tibouchina* / *Pleroma* |
+| `plants/tibouchina-prata-01.jpg` | Orelha-de-onça (prata) | *Pleroma heteromallum* (*Tibouchina grandifolia*) |
 | `plants/cheflera-dracaena-01.jpg` | Cheflera | *Heptapleurum arboricola*, *Dracaena* |
 | `plants/eugenia-calathea-01.jpg` | Arbusto Myrtaceae | *Eugenia* / *Syzygium*, *Goeppertia zebrina* |
 | `plants/forracao-bromelias-01.jpg` | Forração | *Soleirolia* / *Dichondra*, *Neoregelia*, *Xanadu* |
