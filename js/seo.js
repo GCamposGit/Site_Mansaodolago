@@ -29,7 +29,17 @@
     (path.slice(-1) === "/" && file.indexOf(".html") === -1);
 
   /* Static language folders (e.g. /en/) — not the querystring i18n system */
-  var isStaticLangPath = /^\/(en|es)(\/|$)/i.test(path);
+  function folderLangFromPath(p) {
+    var segs = String(p || "").replace(/\\/g, "/").split("/");
+    for (var i = 0; i < segs.length; i++) {
+      var s = segs[i];
+      if (!s || /:$/.test(s)) continue;
+      if (/^en$/i.test(s)) return "en";
+      if (/^es$/i.test(s)) return "es";
+    }
+    return null;
+  }
+  var isStaticLangPath = !!folderLangFromPath(path);
 
   /* Clean page URL (no query) — PT / x-default identity for dynamic pages */
   var pageUrlClean = base + (path === "/" ? "/" : path);
@@ -85,9 +95,7 @@
   }
 
   function langFromPath() {
-    if (/^\/en(\/|$)/i.test(path)) return "en";
-    if (/^\/es(\/|$)/i.test(path)) return "es";
-    return null;
+    return folderLangFromPath(path);
   }
 
   function withLangQuery(cleanUrl, lang) {

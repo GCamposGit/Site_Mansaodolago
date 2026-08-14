@@ -43,7 +43,7 @@
  <a href="natureza.html" data-i18n="nav.natureza">A Natureza</a>
  <a href="entorno.html" data-i18n="nav.entorno">O Entorno</a>
  <a href="galeria.html" data-i18n="nav.galeria">Galeria</a>
- <a href="blog/" data-i18n="nav.blog">Blog</a>
+ <a href="blog/index.html" data-i18n="nav.blog">Blog</a>
  <a href="faq.html" data-i18n="nav.faq">FAQ</a>
  <a href="contato.html" data-i18n="nav.contato">Contato</a>
  </nav>
@@ -68,7 +68,7 @@
  <a href="natureza.html" data-i18n="nav.natureza">A Natureza</a>
  <a href="entorno.html" data-i18n="nav.entorno">O Entorno</a>
  <a href="galeria.html" data-i18n="nav.galeria">Galeria</a>
- <a href="blog/" data-i18n="nav.blog">Blog</a>
+ <a href="blog/index.html" data-i18n="nav.blog">Blog</a>
  <a href="faq.html" data-i18n="nav.faq">FAQ</a>
  <a href="contato.html" data-i18n="nav.contato">Contato</a>
  </nav>
@@ -156,7 +156,7 @@
  <p class="section-label" data-i18n="fi.ref.label">Referências</p>
  <h2 class="text-3xl md:text-4xl heading-serif text-[#0D3B2E]" data-i18n="fi.ref.h2">Produções e ambientes</h2>
  </div>
- <p class="text-sm text-[#5A5A5A] max-w-sm">Lista de imagens em <code class="text-xs bg-[#F8F5F0] px-1">js/site-media.js</code> â" ' <code class="text-xs bg-[#F8F5F0] px-1">filmings.gallery</code>.</p>
+ <p class="text-sm text-[#5A5A5A] max-w-sm" data-i18n="fi.ref.p">Produções e ambientes da casa, para referência do projeto.</p>
  </div>
  <div class="gallery-grid" data-media-gallery="filmings.gallery" data-wide-every="4"></div>
  <p class="text-center mt-8">
@@ -349,7 +349,7 @@
  <li><a href="natureza.html" data-i18n="nav.natureza">A Natureza</a></li>
  <li><a href="entorno.html" data-i18n="nav.entorno">O Entorno</a></li>
  <li><a href="galeria.html" data-i18n="nav.galeria">Galeria</a></li>
- <li><a href="blog/" data-i18n="nav.blog">Blog</a></li>
+ <li><a href="blog/index.html" data-i18n="nav.blog">Blog</a></li>
  <li><a href="faq.html" data-i18n="nav.faq">FAQ</a></li>
  <li><a href="contato.html" data-i18n="nav.contato">Contato</a></li>
  </ul>
@@ -383,15 +383,15 @@
  </div><!-- /.site-frame -->
 <script src="js/site-media.js?v=20260801p3f"></script>
  <!-- i18n: runtime first; dictionary deferred for LCP -->
- <script src="js/i18n.js?v=20260813w1"></script>
- <script src="js/site.js?v=20260801p3f"></script>
+ <script src="js/i18n.js?v=20260813w2b"></script>
+ <script src="js/site.js?v=20260813w2fix"></script>
  <script>
  (function () {
    function loadI18nData() {
      if (window.__mdlI18nData) return;
      window.__mdlI18nData = true;
      var s = document.createElement("script");
-     s.src = "js/i18n-data.js?v=20260813w1";
+     s.src = "js/i18n-data.js?v=20260813w2";
      s.onload = function () {
        if (window.I18N && window.I18N.apply) {
          try { window.I18N.apply(window.I18N.lang || "pt"); } catch (e) {}
@@ -409,7 +409,7 @@
  <script src="js/youtube-facade.js?v=20260713m"></script>
 <!-- sprint5-scripts -->
  <script src="js/site-config.js?v=20260804email"></script>
- <script src="js/seo.js?v=20260813w1"></script>
+ <script src="js/seo.js?v=20260813w2b"></script>
  <script src="js/analytics.js?v=20260804email"></script>
 <!-- /sprint5-scripts -->
 </body>

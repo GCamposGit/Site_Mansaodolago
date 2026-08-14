@@ -26,30 +26,43 @@
 
   function pathLang() {
     var p = (window.location.pathname || "").replace(/\\/g, "/");
-    if (/\/en(\/|$)/i.test(p)) return "en";
-    if (/\/es(\/|$)/i.test(p)) return "es";
+    var segs = p.split("/");
+    for (var i = 0; i < segs.length; i++) {
+      var s = segs[i];
+      if (!s || /:$/.test(s)) continue;
+      if (/^en$/i.test(s)) return "en";
+      if (/^es$/i.test(s)) return "es";
+    }
     return null;
   }
 
-  function stayUrlForLang(lang) {
+  function clusterFile() {
     var p = (window.location.pathname || "").replace(/\\/g, "/");
-    var onStay = /hospedagem\.html$/i.test(p);
+    var m = p.match(/\/(hospedagem|eventos|filmagens)\.html$/i);
+    return m ? m[1].toLowerCase() + ".html" : null;
+  }
+
+  function clusterUrlForLang(lang) {
+    var p = (window.location.pathname || "").replace(/\\/g, "/");
+    var file = clusterFile();
     var onEnHome = /\/en\/?$/i.test(p) || /\/en\/index\.html$/i.test(p);
     var onEsHome = /\/es\/?$/i.test(p) || /\/es\/index\.html$/i.test(p);
-    if (!onStay && !onEnHome && !onEsHome && !pathLang()) return null;
-    if (onStay) {
-      if (/\/en\/hospedagem\.html$/i.test(p)) {
+    if (!file && !onEnHome && !onEsHome && !pathLang()) return null;
+    if (file) {
+      var inEn = /\/en\//i.test(p);
+      var inEs = /\/es\//i.test(p);
+      if (inEn) {
         if (lang === "en") return null;
-        if (lang === "es") return "../es/hospedagem.html";
-        return "../hospedagem.html";
+        if (lang === "es") return "../es/" + file;
+        return "../" + file;
       }
-      if (/\/es\/hospedagem\.html$/i.test(p)) {
+      if (inEs) {
         if (lang === "es") return null;
-        if (lang === "en") return "../en/hospedagem.html";
-        return "../hospedagem.html";
+        if (lang === "en") return "../en/" + file;
+        return "../" + file;
       }
-      if (lang === "en") return "en/hospedagem.html";
-      if (lang === "es") return "es/hospedagem.html";
+      if (lang === "en") return "en/" + file;
+      if (lang === "es") return "es/" + file;
       return null;
     }
     if (onEnHome) {
@@ -245,7 +258,7 @@
       btn.setAttribute("data-lang-bound", "1");
       btn.addEventListener("click", function () {
         var lang = btn.getAttribute("data-set-lang");
-        var dest = stayUrlForLang(lang);
+        var dest = clusterUrlForLang(lang);
         if (dest) {
           window.location.href = dest;
           return;

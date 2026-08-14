@@ -11,7 +11,11 @@
 - Stays in Spanish: https://www.mansaodolago.com/es/hospedagem.html
 - Nature: https://www.mansaodolago.com/natureza.html
 - Events: https://www.mansaodolago.com/eventos.html
+- Events in English: https://www.mansaodolago.com/en/eventos.html
+- Events in Spanish: https://www.mansaodolago.com/es/eventos.html
 - Filming / photo location: https://www.mansaodolago.com/filmagens.html
+- Filming in English: https://www.mansaodolago.com/en/filmagens.html
+- Filming in Spanish: https://www.mansaodolago.com/es/filmagens.html
 - Gallery: https://www.mansaodolago.com/galeria.html
 - Surroundings: https://www.mansaodolago.com/entorno.html
 - History: https://www.mansaodolago.com/historia.html

@@ -50,7 +50,10 @@
     grid.innerHTML = posts
       .map(function (p, idx) {
         var href = p.slug + ".html";
-        var img = p.image || "../images/hero/mansao-do-lago-hero-lago-ponte-loop-poster-800w.webp";
+        var img =
+          p.image ||
+          "../images/hero/mansao-do-lago-hero-lago-ponte-loop-poster-800w.webp";
+        if (img.charAt(0) === "/") img = ".." + img;
         var alt = p.imageAlt || p.title;
         return (
           '<a class="blog-card" href="' +

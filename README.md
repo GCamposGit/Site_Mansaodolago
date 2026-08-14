@@ -16,8 +16,10 @@ Secrets, post-booking guest guides, backups, and internal ops stay **off GitHub*
 | `/` | Home — stay, events, filming |
 | `/hospedagem.html` | Suite, calendar, **final** stay price, WhatsApp |
 | `/eventos.html` | Event spaces, **final** event price, confirm on WhatsApp |
-| `/filmagens.html` | Location hire |
+| `/filmagens.html` | Location hire (quote on WhatsApp) |
 | `/en/` · `/es/` | English / Spanish ad landings |
+| `/en/hospedagem.html` · `/en/eventos.html` · `/en/filmagens.html` | Static English money pages |
+| `/es/hospedagem.html` · `/es/eventos.html` · `/es/filmagens.html` | Static Spanish money pages |
 | `/blog/` | Editorial (Cadernos da Mansão) |
 
 Direct booking is the product. Airbnb and Booking.com are official alternatives with platform protection.

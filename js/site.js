@@ -63,6 +63,25 @@
   }
 
   /* —— Media catalog helpers —— */
+  function resolveMediaSrc(src) {
+    if (!src) return src;
+    var s = String(src);
+    if (
+      /^(https?:)?\/\//i.test(s) ||
+      s.charAt(0) === "/" ||
+      s.indexOf("data:") === 0
+    ) {
+      return s;
+    }
+    if (!/^(images|videos|fonts)\//i.test(s)) return s;
+    /* Relative to the HTML file — never "/images/…".
+       A leading slash breaks file:// and Live Server when the
+       workspace root is not the site folder. */
+    var p = (window.location.pathname || "").replace(/\\/g, "/");
+    if (/\/(en|es|blog)\//i.test(p)) return "../" + s;
+    return s;
+  }
+
   function mediaGet(path) {
     if (!window.SITE_MEDIA || !path) return null;
     var parts = String(path).replace(/\[(\d+)\]/g, ".$1").split(".");
@@ -87,16 +106,17 @@
     document.querySelectorAll("[data-media]").forEach(function (el) {
       var item = mediaItem(mediaGet(el.getAttribute("data-media")));
       if (!item || !item.src) return;
+      var src = resolveMediaSrc(item.src);
       if (el.tagName === "IMG") {
-        el.src = item.src;
+        el.src = src;
         if (item.alt) el.alt = item.alt;
       } else {
         var img = el.querySelector("img");
         if (img) {
-          img.src = item.src;
+          img.src = src;
           if (item.alt) img.alt = item.alt;
         } else {
-          el.style.backgroundImage = 'url("' + item.src + '")';
+          el.style.backgroundImage = 'url("' + src + '")';
         }
       }
       if (item.caption && el.getAttribute("data-caption") === null) {
@@ -127,7 +147,7 @@
         btn.setAttribute("data-caption", cap);
         if (item.captionKey) btn.setAttribute("data-i18n-caption", item.captionKey);
         var img = document.createElement("img");
-        img.src = item.src;
+        img.src = resolveMediaSrc(item.src);
         var altText = item.alt || item.caption || "";
         if (window.I18N && item.altKey) altText = window.I18N.t(item.altKey) || altText;
         else if (window.I18N && item.captionKey)
@@ -162,7 +182,7 @@
         card.className = "media-card";
         card.innerHTML =
           '<img src="' +
-          item.src +
+          resolveMediaSrc(item.src) +
           '" alt="' +
           altText.replace(/"/g, "&quot;") +
           '" loading="lazy">' +
@@ -204,9 +224,9 @@
         if (v.src) {
           wrap.innerHTML =
             '<video controls playsinline preload="none" poster="' +
-            (v.poster || "") +
+            resolveMediaSrc(v.poster || "") +
             '" src="' +
-            v.src +
+            resolveMediaSrc(v.src) +
             '"></video>' +
             '<p class="video-slot__caption">' +
             vTitle +
@@ -215,7 +235,7 @@
         } else {
           wrap.innerHTML =
             '<div class="video-slot__placeholder" style="background-image:url(\'' +
-            (v.poster || "") +
+            resolveMediaSrc(v.poster || "") +
             "')\">" +
             '<span class="video-slot__badge">' +
             ((window.I18N && window.I18N.t("common.video_soon")) ||

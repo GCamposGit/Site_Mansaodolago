@@ -49,7 +49,7 @@ Cron (Hostinger): run `api/cron.php` or `availability.php` via CLI hourly.
 
 - Main site: one HTML + client i18n (`?lang=en|es`).
 - Ads landings: static `/en/` and `/es/` (better crawl + LCP).
-- Stay cluster: `/hospedagem.html`, `/en/hospedagem.html`, `/es/hospedagem.html`.
+- Money-page clusters: `/hospedagem.html`, `/eventos.html`, `/filmagens.html` plus `/en/` and `/es/` copies.
 - `seo.js` must not point an EN/ES `canonical` at the PT URL.
 
 ## Media
