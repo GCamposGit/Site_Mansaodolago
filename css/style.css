@@ -5729,6 +5729,10 @@ body.lp-us:has(.lp-us-sticky:not([hidden])) {
   text-decoration: none;
   color: inherit;
 }
+.blog-card[hidden],
+.blog-empty[hidden] {
+  display: none !important;
+}
 .blog-card:hover {
   box-shadow: 0 14px 36px rgba(13, 59, 46, 0.1);
   transform: translateY(-2px);

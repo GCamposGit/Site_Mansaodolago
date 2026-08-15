@@ -20,7 +20,7 @@ on:
 
 concurrency:
   group: deploy-hostinger
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -50,6 +50,24 @@ jobs:
             echo "::error::A secret is missing or named differently. Required names: FTP_SERVER, FTP_USERNAME, FTP_PASSWORD"
             exit 1
           fi
+
+      - name: Hub lists every published post
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          data = Path("js/blog-data.js").read_text(encoding="utf-8")
+          hub = Path("blog/index.html").read_text(encoding="utf-8")
+          slugs = re.findall(r'slug:\s*"([^"]+)"', data)
+          if not slugs:
+              raise SystemExit("js/blog-data.js has no slugs")
+          missing = [s for s in slugs if f"{s}.html" not in hub]
+          if missing:
+              raise SystemExit(
+                  "blog/index.html is missing static cards for: " + ", ".join(missing)
+              )
+          print("Hub lists", len(slugs), "posts:", ", ".join(slugs))
+          PY
 
       - name: Upload to Hostinger
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
@@ -93,3 +111,61 @@ jobs:
             **/*.md
             **/*.bak
             **/__pycache__/**
+
+      - name: Force-put blog files and read them back
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lftp
+          SLUG=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+          text = Path("js/blog-data.js").read_text(encoding="utf-8")
+          print(re.search(r'slug:\s*"([^"]+)"', text).group(1))
+          PY
+          )
+          echo "Newest slug: $SLUG"
+          # Incremental FTP has written to the wrong folder before.
+          # Force these files into the FTP home (already public_html), then
+          # cat them back so a "green" job cannot hide a missed upload.
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "ftps://$FTP_SERVER" <<'LFTP'
+          set ssl:verify-certificate no
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set net:max-retries 3
+          set net:timeout 30
+          mkdir -p blog
+          mkdir -p js
+          mirror -R --overwrite --exclude-glob '*.md' blog blog
+          put -O js js/blog-data.js
+          put -O js js/blog.js
+          put sitemap.xml
+          put .htaccess
+          bye
+          LFTP
+          echo "Reading remote hub back over FTP"
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "ftps://$FTP_SERVER" -e "
+            set ssl:verify-certificate no
+            set ftp:ssl-force true
+            set ftp:ssl-protect-data true
+            cat blog/index.html
+            bye
+          " | tee /tmp/remote-hub.html | grep -F -q "$SLUG"
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "ftps://$FTP_SERVER" -e "
+            set ssl:verify-certificate no
+            set ftp:ssl-force true
+            cat js/blog-data.js
+            bye
+          " | grep -F -q "$SLUG"
+          echo "FTP root has hub + blog-data.js with $SLUG"
+          if curl -fsS --max-time 30 -H "Cache-Control: no-cache" \
+            "https://www.mansaodolago.com/blog/" | grep -F -q "$SLUG"; then
+            echo "Public /blog/ already shows $SLUG"
+          else
+            echo "::warning::FTP root is updated but Cloudflare may still be serving an old /blog/. Purge /blog/ /blog/index.html /js/blog-data.js"
+          fi

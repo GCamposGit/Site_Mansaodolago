@@ -67,7 +67,7 @@ Copy `api/config.sample.php` → `api/config.php` locally. Never commit `config.
 ## Deploy (GitHub Actions → Hostinger)
 
 Push to `master` (or run **Actions → Deploy to Hostinger → Run workflow**).  
-The workflow `.github/workflows/deploy-hostinger.yml` uploads over **FTPS** into `public_html/`.
+The workflow `.github/workflows/deploy-hostinger.yml` uploads over **FTPS** into the FTP home (`public_html/`).
 
 **GitHub secrets** (Settings → Secrets and variables → Actions):
 
@@ -76,15 +76,19 @@ The workflow `.github/workflows/deploy-hostinger.yml` uploads over **FTPS** into
 | `FTP_SERVER` | FTP hostname from hPanel → Files → FTP Accounts |
 | `FTP_USERNAME` | FTP user |
 | `FTP_PASSWORD` | FTP password |
-| `FTP_SERVER_DIR` | Optional **variable**. Default `./` because this FTP user already opens inside live `public_html`. |
+| `FTP_SERVER_DIR` | Optional **variable**. Default `./` because this FTP user already opens inside live `public_html`. Do **not** set `public_html/` or the files land one folder too deep. |
 
 **Never overwritten on the server:** `api/config.php`, `p/` (guest guides), `js/private-*.js`.
 
 **Not uploaded:** `02-docs/`, `scripts/`, `01-assets/`, backups, repo markdown, preview videos.
 
-After HTML/JS/CSS changes: purge the Cloudflare cache.
+A green incremental FTP job is **not** enough. After the sync, the workflow force-puts `blog/*.html`, `js/blog-data.js`, `js/blog.js`, `sitemap.xml` and `.htaccess`, then reads `blog/index.html` back over FTP. If the newest slug is missing there, the job fails.
 
-First run uploads the whole public site (can take 20–60 min). Later runs only sync files that changed.
+The blog hub cards are **static HTML** in `blog/index.html`. `js/blog.js` only filters them. A stale `blog-data.js` can no longer empty `/blog/`.
+
+After HTML/JS/CSS changes: Cloudflare → Caching → Configuration → Purge Cache. For a new post, Custom Purge at least `/blog/`, `/blog/index.html`, `/blog/<slug>.html`, `/js/blog-data.js`.
+
+First run uploads the whole public site (can take 20–60 min). Later runs only sync files that changed, plus the forced blog files above.
 
 ---
 

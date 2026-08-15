@@ -18,7 +18,7 @@
  <link rel="preload" href="../fonts/font-1.woff2" as="font" type="font/woff2" crossorigin>
  <link rel="stylesheet" href="../css/fonts.css?v=20260801blog">
  <link rel="stylesheet" href="../css/tailwind-built.min.css?v=20260801blog">
- <link rel="stylesheet" href="../css/style.min.css?v=20260814nav">
+ <link rel="stylesheet" href="../css/style.min.css?v=20260814hub">
  <link rel="icon" href="../favicon.svg?v=mlogo" type="image/svg+xml">
  <link rel="icon" href="../favicon-32.png?v=mlogo" type="image/png" sizes="32x32">
  <link rel="apple-touch-icon" href="../apple-touch-icon.png?v=mlogo">
@@ -100,8 +100,71 @@
 
  <section class="section pt-4 pb-16">
  <div class="max-w-7xl mx-auto px-6">
- <div class="blog-filters" data-blog-filters role="group" aria-label="Filtrar por tema"></div>
- <div class="blog-grid" data-blog-grid></div>
+ <div class="blog-filters" data-blog-filters role="group" aria-label="Filtrar por tema">
+ <button type="button" class="blog-filter is-active" data-blog-cat="all">Todos</button>
+ <button type="button" class="blog-filter" data-blog-cat="hospedagem">Hospedagem</button>
+ <button type="button" class="blog-filter" data-blog-cat="filmagens">Filmagens</button>
+ <button type="button" class="blog-filter" data-blog-cat="eventos">Eventos</button>
+ <button type="button" class="blog-filter" data-blog-cat="mansao">A Mansão</button>
+ </div>
+ <div class="blog-grid" data-blog-grid>
+ <a class="blog-card blog-card--featured" href="onde-ficar-perto-allianz-parque-perdizes.html" data-cat="hospedagem">
+ <div class="blog-card__media">
+ <img src="../images/surroundings/mansao-do-lago-entorno-allianz-parque-01.jpg" alt="Arena da zona oeste de São Paulo, ainda buscada como Allianz Parque" width="800" height="500" loading="eager" decoding="async">
+ </div>
+ <div class="blog-card__body">
+ <div class="blog-card__meta">
+ <span class="blog-card__cat">Hospedagem</span>
+ <span>14 de agosto de 2026</span>
+ </div>
+ <h2 class="blog-card__title">Onde ficar perto do Allianz Parque (Nubank Parque) em Perdizes</h2>
+ <p class="blog-card__excerpt">Allianz Parque agora é Nubank Parque. Como escolher base em Perdizes para show ou jogo sem dormir na porta da arena, e o que muda se o compromisso for no Pacaembu.</p>
+ <span class="blog-card__more">Ler artigo</span>
+ </div>
+ </a>
+ <a class="blog-card" href="eventos-corporativos-residencia-perdizes.html" data-cat="eventos">
+ <div class="blog-card__media">
+ <img src="../images/gourmet/mansao-do-lago-area-gourmet-mesa-01.jpg" alt="Área de refeições e convívio em residência em São Paulo" width="800" height="500" loading="lazy" decoding="async">
+ </div>
+ <div class="blog-card__body">
+ <div class="blog-card__meta">
+ <span class="blog-card__cat">Eventos</span>
+ <span>5 de agosto de 2026</span>
+ </div>
+ <h2 class="blog-card__title">Eventos corporativos em residência: quando o offsite cabe em uma casa (e quando não)</h2>
+ <p class="blog-card__excerpt">Offsites e confraternizações enxutas em casas: o que hotel não resolve, que critérios usar e quando a residência é o fit certo em São Paulo.</p>
+ <span class="blog-card__more">Ler artigo</span>
+ </div>
+ </a>
+ <a class="blog-card" href="locacao-clipe-musical-casa-sao-paulo.html" data-cat="filmagens">
+ <div class="blog-card__media">
+ <img src="../images/filmings/mansao-do-lago-producao-piscina-noturna-01.jpg" alt="Produção audiovisual em área externa de residência em São Paulo" width="800" height="500" loading="lazy" decoding="async">
+ </div>
+ <div class="blog-card__body">
+ <div class="blog-card__meta">
+ <span class="blog-card__cat">Filmagens</span>
+ <span>5 de agosto de 2026</span>
+ </div>
+ <h2 class="blog-card__title">Locação para clipe musical em casa: o que muda quando o cenário é uma residência real</h2>
+ <p class="blog-card__excerpt">Como escolher casa para videoclipe em SP: briefing, tamanho de equipe, ruído e o fit entre música e cenário residencial.</p>
+ <span class="blog-card__more">Ler artigo</span>
+ </div>
+ </a>
+ <a class="blog-card" href="suite-privativa-em-residencia-perdizes.html" data-cat="hospedagem">
+ <div class="blog-card__media">
+ <img src="../images/suite/mansao-do-lago-suite-hospedes1-01.webp" alt="Suíte privativa com luz natural em residência em Perdizes, São Paulo" width="800" height="500" loading="lazy" decoding="async">
+ </div>
+ <div class="blog-card__body">
+ <div class="blog-card__meta">
+ <span class="blog-card__cat">Hospedagem</span>
+ <span>5 de agosto de 2026</span>
+ </div>
+ <h2 class="blog-card__title">Suíte privativa em residência: por que escolher uma casa em vez de hotel, pousada ou flat</h2>
+ <p class="blog-card__excerpt">Hotel, flat, pousada ou casa inteira? O que muda quando a estadia acontece dentro de uma residência real em bairro calmo de São Paulo.</p>
+ <span class="blog-card__more">Ler artigo</span>
+ </div>
+ </a>
+ </div>
  </div>
  </section>
 
@@ -189,8 +252,8 @@
    else setTimeout(loadI18nData, 1200);
  })();
  </script>
- <script src="../js/blog-data.js?v=20260814allianz"></script>
- <script src="../js/blog.js?v=20260813w2b"></script>
+ <script src="../js/blog-data.js?v=20260814hub"></script>
+ <script src="../js/blog.js?v=20260814hub"></script>
  <script src="../js/site-config.js?v=20260804email"></script>
  <script src="../js/seo.js?v=20260813w2b"></script>
  <script src="../js/analytics.js?v=20260804email"></script>
