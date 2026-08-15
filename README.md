@@ -82,13 +82,11 @@ The workflow `.github/workflows/deploy-hostinger.yml` uploads over **FTPS** into
 
 **Not uploaded:** `02-docs/`, `scripts/`, `01-assets/`, backups, repo markdown, preview videos.
 
-A green incremental FTP job is **not** enough. After the sync, the workflow force-puts `blog/*.html`, `js/blog-data.js`, `js/blog.js`, `sitemap.xml` and `.htaccess`, then reads `blog/index.html` back over FTP. If the newest slug is missing there, the job fails.
+Blog hub cards live in `blog/index.html`. A new post needs the article HTML **and** a card in that file (plus an entry in `js/blog-data.js`). The workflow refuses the push if a published slug has no card.
 
-The blog hub cards are **static HTML** in `blog/index.html`. `js/blog.js` only filters them. A stale `blog-data.js` can no longer empty `/blog/`.
+After HTML/JS/CSS changes: Cloudflare → **Caching** → **Configuration** → **Purge Cache**.
 
-After HTML/JS/CSS changes: Cloudflare → Caching → Configuration → Purge Cache. For a new post, Custom Purge at least `/blog/`, `/blog/index.html`, `/blog/<slug>.html`, `/js/blog-data.js`.
-
-First run uploads the whole public site (can take 20–60 min). Later runs only sync files that changed, plus the forced blog files above.
+First run uploads the whole public site (can take 20–60 min). Later runs only sync files that changed.
 
 ---
 
