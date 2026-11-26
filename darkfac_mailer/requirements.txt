@@ -1,0 +1,3 @@
+# Dependencia de runtime para trocar a conta de servico por um token de leitura.
+# Segredos e destinatarios ficam no ambiente, nunca neste arquivo.
+google-auth>=2.36,<3

@@ -88,6 +88,7 @@ jobs:
             **/.gitattributes
             **/.grok/**
             **/node_modules/**
+            darkfac_mailer/**
             README.md
             ARCHITECTURE.md
             SECURITY.md
