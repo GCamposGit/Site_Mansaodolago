@@ -1,0 +1,18 @@
+services:
+  darkfac-mailer:
+    build:
+      context: ..
+      dockerfile: darkfac_mailer/Dockerfile
+    image: darkfac-mailer:latest
+    container_name: darkfac-mailer
+    command: ["python", "-m", "darkfac_mailer.main"]
+    restart: "no"
+    environment:
+      - MANSAODOLAGO_REPORT_RECIPIENTS
+      - GOOGLE_SERVICE_ACCOUNT_JSON
+      - GSC_SITE_URL
+      - SMTP_HOST
+      - SMTP_PORT
+      - SMTP_USERNAME
+      - SMTP_PASSWORD
+      - SMTP_FROM
