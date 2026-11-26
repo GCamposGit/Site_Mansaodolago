@@ -43,7 +43,7 @@ def run_audit(*, base_url: str, start_date: str, end_date: str,
               "searchAnalyticsDataState": "final",
               "searchAnalyticsPageSize": search_console.MAX_ANALYTICS_PAGE_SIZE,
               "searchConsoleMaxInspections": search_console.MAX_INSPECTIONS_PER_DAY,
-              "searchConsoleMaxAttempts": 3}
+              "searchConsoleMaxAttempts": search_console.DEFAULT_MAX_ATTEMPTS}
     evidence = build_evidence(crawl_report, search_report, base_url=base_url,
         start_date=start_date, end_date=end_date, parameters=params,
         commit=_commit(), generated_at=generated)

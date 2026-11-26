@@ -16,6 +16,7 @@ class Page:
     requested_url: str
     final_url: str
     content_type: str
+    status: int | None = 200
 
 
 @dataclass
@@ -103,6 +104,10 @@ class SearchConsoleTests(unittest.TestCase):
                 Page("https://mansaodolago.com/a", "https://mansaodolago.com/a", "text/html"),
                 Page("https://mansaodolago.com/not-html.html", "https://mansaodolago.com/not-html.html", "image/jpeg"),
                 Page("https://www.mansaodolago.com/x", "https://www.mansaodolago.com/x", "text/html"),
+                Page("https://mansaodolago.com/old", "https://mansaodolago.com/a", "text/html"),
+                Page("https://mansaodolago.com/gone", "https://mansaodolago.com/gone", "text/html", 404),
+                Page("https://mansaodolago.com/boom", "https://mansaodolago.com/boom", "text/html", 500),
+                Page("https://notmansaodolago.com/", "https://notmansaodolago.com/", "text/html"),
             ),
             sitemap=Sitemap((
                 "https://mansaodolago.com/from-map.html",
@@ -112,7 +117,11 @@ class SearchConsoleTests(unittest.TestCase):
         )
 
     def valid_service(self, *, sites=None, analytics=None, inspections=None):
-        page_urls = ("https://mansaodolago.com/a", "https://mansaodolago.com/from-map.html")
+        page_urls = (
+            "https://mansaodolago.com/a",
+            "https://mansaodolago.com/from-map.html",
+            "https://www.mansaodolago.com/x",
+        )
         return FakeService(
             sites if sites is not None else {"siteEntry": [{"siteUrl": "sc-domain:mansaodolago.com"}]},
             analytics if analytics is not None else [
@@ -134,6 +143,7 @@ class SearchConsoleTests(unittest.TestCase):
         self.assertEqual(len(report.pages), 1)
         self.assertEqual({row["inspectionUrl"] for row in service.inspected}, {
             "https://mansaodolago.com/a", "https://mansaodolago.com/from-map.html",
+            "https://www.mansaodolago.com/x",
         })
         self.assertEqual(len(service.queries), 2)
         for _, query in service.queries:
@@ -154,9 +164,38 @@ class SearchConsoleTests(unittest.TestCase):
         self.assertEqual([body["startRow"] for body in pages_queries], [0, 2])
         self.assertEqual([row["keys"][0] for row in report.pages], ["a", "b", "c"])
 
+    def test_url_prefix_www_property_scopes_inspections_to_its_scheme_and_host(self):
+        for prop, expected in (
+            ("https://www.mansaodolago.com/", {"https://www.mansaodolago.com/x"}),
+            ("http://www.mansaodolago.com/", set()),
+        ):
+            service = self.valid_service(sites={"siteEntry": [{"siteUrl": prop}]})
+            with self.subTest(prop=prop):
+                report = sc.audit_search_console(self.make_crawl(), "2026-11-01", "2026-11-20", service=service)
+                self.assertEqual(report.property_url, prop)
+                self.assertEqual({row["inspectionUrl"] for row in service.inspected}, expected)
+                self.assertLessEqual({row["siteUrl"] for row in service.inspected}, {prop})
+
+    def test_domain_property_wins_over_url_prefixes(self):
+        service = self.valid_service(sites={"siteEntry": [
+            {"siteUrl": "https://www.mansaodolago.com/"},
+            {"siteUrl": "sc-domain:mansaodolago.com"},
+            {"siteUrl": "https://mansaodolago.com/"},
+        ]})
+        self.assertEqual(sc._resolve_property(service, 1, lambda _s: None), "sc-domain:mansaodolago.com")
+
+    def test_domain_scope_covers_subdomains_but_not_lookalikes(self):
+        prop = "sc-domain:mansaodolago.com"
+        self.assertTrue(sc._url_belongs("http://blog.mansaodolago.com/a", prop))
+        self.assertFalse(sc._url_belongs("https://notmansaodolago.com/", prop))
+        self.assertFalse(sc._url_belongs("https://mansaodolago.com.evil.test/", prop))
+
     def test_ambiguous_or_missing_property_fails_before_queries(self):
         for sites in ({"siteEntry": []}, {"siteEntry": [
-            {"siteUrl": "sc-domain:mansaodolago.com"},
+            {"siteUrl": "https://blog.mansaodolago.com/"},
+            {"siteUrl": "https://www.mansaodolago.com/blog/"},
+        ]}, {"siteEntry": [
+            {"siteUrl": "https://www.mansaodolago.com/"},
             {"siteUrl": "https://mansaodolago.com/"},
         ]}):
             service = self.valid_service(sites=sites)
@@ -169,9 +208,11 @@ class SearchConsoleTests(unittest.TestCase):
         service = self.valid_service(inspections={
             urls[0]: inspection(urls[0], verdict="FAIL", robots="DISALLOWED"),
             urls[1]: {"inspectionResult": {"indexStatusResult": {"verdict": "VERDICT_UNSPECIFIED"}}},
+            "https://www.mansaodolago.com/x": inspection("https://www.mansaodolago.com/x"),
         })
         result = sc.audit_search_console(self.make_crawl(), "2026-11-01", "2026-11-20", service=service).inspections
-        bad, unknown = result
+        bad, unknown, healthy = result
+        self.assertEqual(healthy.classification, "ok")
         self.assertEqual(bad.classification, "error")
         self.assertEqual(bad.errors, ("verdict", "robotsTxtState"))
         self.assertEqual(unknown.classification, "unknown")

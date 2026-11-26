@@ -16,6 +16,7 @@ from .secret_source import SEARCH_CONSOLE_SCOPE, SecretSourceError, load_credent
 PROPERTY_DOMAIN = "mansaodolago.com"
 MAX_INSPECTIONS_PER_DAY = 2_000
 MAX_ANALYTICS_PAGE_SIZE = 25_000
+DEFAULT_MAX_ATTEMPTS = 3
 _PROPERTY_SCHEME = re.compile(r"^https?://", re.IGNORECASE)
 
 
@@ -109,7 +110,7 @@ def audit_search_console(
     service: Any | None = None,
     max_inspections: int = MAX_INSPECTIONS_PER_DAY,
     page_size: int = MAX_ANALYTICS_PAGE_SIZE,
-    max_attempts: int = 3,
+    max_attempts: int = DEFAULT_MAX_ATTEMPTS,
     sleep: Callable[[float], None] = time.sleep,
 ) -> SearchConsoleReport:
     """Consulta dados finais e inspeciona cada URL HTML descoberta, sem escrita."""
@@ -150,6 +151,11 @@ def _resolve_property(service: Any, attempts: int, sleep: Callable[[float], None
     response = _execute(lambda: service.sites().list(), attempts, sleep)
     sites = response.get("siteEntry", []) if isinstance(response, dict) else []
     matches = [site.get("siteUrl") for site in sites if isinstance(site, dict) and _property_matches(site.get("siteUrl"))]
+    # A propriedade de dominio cobre todos os protocolos e subdominios, entao
+    # vence qualquer URL-prefix. Entre varias URL-prefix nao ha escolha segura.
+    domain_matches = [value for value in matches if _is_domain_property(value)]
+    if domain_matches:
+        matches = domain_matches
     if len(matches) != 1:
         raise SearchConsoleError("propriedade mansaodolago.com ausente ou ambigua no Search Console")
     return matches[0]
@@ -158,7 +164,7 @@ def _resolve_property(service: Any, attempts: int, sleep: Callable[[float], None
 def _property_matches(value: Any) -> bool:
     if not isinstance(value, str):
         return False
-    if value.lower() == "sc-domain:" + PROPERTY_DOMAIN:
+    if _is_domain_property(value):
         return True
     if not _PROPERTY_SCHEME.match(value):
         return False
@@ -166,7 +172,8 @@ def _property_matches(value: Any) -> bool:
         parsed = urlsplit(value)
         return (
             parsed.hostname is not None
-            and parsed.hostname.lower() == PROPERTY_DOMAIN
+            and parsed.hostname.lower() in (PROPERTY_DOMAIN, "www." + PROPERTY_DOMAIN)
+            and parsed.port is None
             and parsed.username is None
             and parsed.password is None
             and parsed.path in ("", "/")
@@ -177,18 +184,25 @@ def _property_matches(value: Any) -> bool:
         return False
 
 
+def _is_domain_property(value: str) -> bool:
+    return value.lower() == "sc-domain:" + PROPERTY_DOMAIN
+
+
 def _crawl_urls(report: Any, property_url: str) -> tuple[str, ...]:
+    """URLs finais de paginas HTML 2xx, mais os documentos HTML do sitemap."""
     urls: set[str] = set()
     for page in getattr(report, "pages", ()):
+        status = getattr(page, "status", None)
+        url = getattr(page, "final_url", None)
+        if not isinstance(status, int) or not 200 <= status <= 299 or not isinstance(url, str):
+            continue
         content_type = (getattr(page, "content_type", None) or "").lower()
-        requested = getattr(page, "requested_url", None)
-        final = getattr(page, "final_url", None)
-        for url in (requested, final):
-            if not isinstance(url, str):
-                continue
-            is_html = "text/html" in content_type if content_type else crawler.is_crawl_document(url)
-            if is_html and _url_belongs(url, property_url):
-                urls.add(url)
+        if content_type:
+            is_html = "text/html" in content_type or "application/xhtml+xml" in content_type
+        else:
+            is_html = crawler.is_crawl_document(url)
+        if is_html and _url_belongs(url, property_url):
+            urls.add(url)
     sitemap = getattr(report, "sitemap", None)
     for url in getattr(sitemap, "references", ()):
         if isinstance(url, str) and crawler.is_crawl_document(url) and _url_belongs(url, property_url):
@@ -197,13 +211,22 @@ def _crawl_urls(report: Any, property_url: str) -> tuple[str, ...]:
 
 
 def _url_belongs(url: str, property_url: str) -> bool:
+    """Dominio: o host e seus subdominios. URL-prefix: esquema, host, porta e caminho."""
     try:
         candidate = urlsplit(url)
-        is_domain_property = property_url.lower() == "sc-domain:" + PROPERTY_DOMAIN
-        prop = urlsplit(property_url if not is_domain_property else "https://" + PROPERTY_DOMAIN)
-        if candidate.scheme not in ("http", "https") or candidate.hostname is None or candidate.hostname.lower() != (prop.hostname or PROPERTY_DOMAIN).lower():
+        host = (candidate.hostname or "").lower()
+        if candidate.scheme not in ("http", "https") or not host:
             return False
-        return is_domain_property or candidate.scheme == prop.scheme
+        if _is_domain_property(property_url):
+            return host == PROPERTY_DOMAIN or host.endswith("." + PROPERTY_DOMAIN)
+        prop = urlsplit(property_url)
+        default_port = 443 if prop.scheme.lower() == "https" else 80
+        return (
+            candidate.scheme == prop.scheme.lower()
+            and host == (prop.hostname or "").lower()
+            and (candidate.port or default_port) == (prop.port or default_port)
+            and (candidate.path or "/").startswith(prop.path or "/")
+        )
     except ValueError:
         return False
 
