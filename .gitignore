@@ -13,8 +13,10 @@ js/private-events-i18n.js
 p/
 # Strategy docs, ads guides, blog research
 02-docs/
-# One-off Python tools
-scripts/
+# One-off Python tools. scripts/ stays local; only the SEO audit is versioned.
+scripts/**
+!scripts/seo_audit/
+!scripts/seo_audit/**
 03-scripts/
 .grok/
 
