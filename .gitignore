@@ -13,8 +13,17 @@ js/private-events-i18n.js
 p/
 # Strategy docs, ads guides, blog research
 02-docs/
-# One-off Python tools
-scripts/
+# One-off Python tools stay local. `scripts/` cannot be re-included as a
+# child, so ignore the children and track only the SEO calendar automation.
+# Deploy still skips the whole scripts tree (workflow **/scripts/** and
+# .htaccess 403). Generated dumps stay ignored.
+scripts/*
+!scripts/seo_calendar/
+scripts/seo_calendar/artifacts/
+scripts/seo_calendar/*.json
+scripts/seo_calendar/*.csv
+scripts/seo_calendar/**/*.json
+scripts/seo_calendar/**/*.csv
 03-scripts/
 .grok/
 

@@ -1,0 +1,5 @@
+# Runtime deps for the Search Console collector.
+# The vault injects a service-account file path (MDL_GSC_CREDENTIAL_FILE).
+# Do not vendor credentials or Search Console dumps in this directory.
+google-api-python-client>=2.149.0,<3
+google-auth>=2.35.0,<3
