@@ -546,7 +546,7 @@ def parse_html(html: str, base_url: str) -> HtmlExtract:
         meta_description_duplicate=len(descriptions) > 1,
         canonical=canonical,
         canonical_absent=canonical is None,
-        canonical_duplicate=len(canonical_raw) > 1,
+        canonical_duplicate=len(collector.canonicals) > 1,
         links=_unique(links),
         duplicate_links=duplicate_links,
         ignored_non_http=_unique(ignored),

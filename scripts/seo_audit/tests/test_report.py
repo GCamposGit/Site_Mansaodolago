@@ -147,8 +147,12 @@ class ReportTests(unittest.TestCase):
             self.assertEqual(list(Path(temp).iterdir()), [])
 
     def test_each_mandatory_section_blocks_only_on_collection_failure(self):
-        for section, status, blocked in (("robots", None, True), ("robots", 503, True), ("robots", 404, False),
-                                         ("sitemap", None, True), ("sitemap", 429, True), ("sitemap", 404, False)):
+        for section, status, blocked in (
+            ("robots", None, True), ("robots", 302, True), ("robots", 403, True),
+            ("robots", 503, True), ("robots", 404, False), ("robots", 410, False),
+            ("sitemap", None, True), ("sitemap", 302, True), ("sitemap", 403, True),
+            ("sitemap", 429, True), ("sitemap", 404, False), ("sitemap", 410, False),
+        ):
             crawl, search = sample_sources()
             broken = {"url": "https://mansaodolago.com/x", "status": status, "parsed": False}
             if section == "robots":
@@ -161,6 +165,21 @@ class ReportTests(unittest.TestCase):
                         self._evidence(crawl, search)
                 else:
                     self._evidence(crawl, search)
+
+    def test_partial_sitemap_failure_or_empty_documents_fails_closed(self):
+        crawl, search = sample_sources()
+        crawl["sitemap"]["documents"] = [
+            {"url": "https://mansaodolago.com/sitemap.xml", "status": 200, "kind": "index", "parsed": True},
+            {"url": "https://mansaodolago.com/sitemap-posts.xml", "status": 200, "kind": "urlset", "parsed": True},
+            {"url": "https://mansaodolago.com/sitemap-pages.xml", "status": None, "kind": "urlset", "parsed": False},
+        ]
+        with self.assertRaisesRegex(ValueError, "sitemap"):
+            self._evidence(crawl, search)
+
+        crawl_empty, search_empty = sample_sources()
+        crawl_empty["sitemap"]["documents"] = []
+        with self.assertRaisesRegex(ValueError, "sitemap"):
+            self._evidence(crawl_empty, search_empty)
 
 
 class ProvenanceTests(unittest.TestCase):

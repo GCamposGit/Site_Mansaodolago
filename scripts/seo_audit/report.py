@@ -16,10 +16,15 @@ class IncompleteCrawlError(ValueError):
     """Uma secao obrigatoria do crawl nao foi coletada."""
 
 
+_ACCEPTED_ABSENCE_STATUSES = frozenset({404, 410})
+
+
 def _collection_failed(item: dict[str, Any]) -> bool:
-    """Sem resposta definitiva: transporte, timeout, 429 ou 5xx. 404 e ausencia observada."""
+    """Falha em transporte, 3xx, 400/401/403/429 ou 5xx. Aceita 2xx e ausencia 404/410."""
     status = item.get("status")
-    return not isinstance(status, int) or status == 429 or status >= 500
+    if not isinstance(status, int):
+        return True
+    return not (200 <= status <= 299 or status in _ACCEPTED_ABSENCE_STATUSES)
 
 
 def require_complete_crawl(crawl: Any) -> None:
@@ -40,8 +45,7 @@ def require_complete_crawl(crawl: Any) -> None:
     if not robots.get("parsed") and _collection_failed(robots):
         failed.append("robots.txt")
     documents = data.get("sitemap", {}).get("documents", [])
-    has_urlset = any(doc.get("parsed") and doc.get("kind") != "index" for doc in documents)
-    if not has_urlset and any(_collection_failed(doc) for doc in documents):
+    if not documents or any((not doc.get("parsed") and _collection_failed(doc)) for doc in documents):
         failed.append("sitemap.xml")
     if failed:
         raise IncompleteCrawlError("crawl incompleto; falha de coleta em: " + ", ".join(failed))

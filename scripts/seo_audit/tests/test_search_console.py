@@ -128,6 +128,7 @@ class SearchConsoleTests(unittest.TestCase):
         page_urls = (
             "https://mansaodolago.com/a",
             "https://mansaodolago.com/from-map.html",
+            "https://mansaodolago.com/old",
             "https://www.mansaodolago.com/x",
         )
         return FakeService(
@@ -151,7 +152,7 @@ class SearchConsoleTests(unittest.TestCase):
         self.assertEqual(len(report.pages), 1)
         self.assertEqual({row["inspectionUrl"] for row in service.inspected}, {
             "https://mansaodolago.com/a", "https://mansaodolago.com/from-map.html",
-            "https://www.mansaodolago.com/x",
+            "https://mansaodolago.com/old", "https://www.mansaodolago.com/x",
         })
         self.assertEqual(len(service.queries), 2)
         for _, query in service.queries:
@@ -244,10 +245,11 @@ class SearchConsoleTests(unittest.TestCase):
         service = self.valid_service(inspections={
             urls[0]: inspection(urls[0], verdict="FAIL", robots="DISALLOWED"),
             urls[1]: {"inspectionResult": {"indexStatusResult": {"verdict": "VERDICT_UNSPECIFIED"}}},
+            "https://mansaodolago.com/old": inspection("https://mansaodolago.com/old"),
             "https://www.mansaodolago.com/x": inspection("https://www.mansaodolago.com/x"),
         })
         result = sc.audit_search_console(self.make_crawl(), "2026-11-01", "2026-11-20", service=service).inspections
-        bad, unknown, healthy = result
+        bad, unknown, _redirect_old, healthy = result
         self.assertEqual(healthy.classification, "ok")
         self.assertEqual(bad.classification, "error")
         self.assertEqual(bad.errors, ("verdict", "robotsTxtState"))

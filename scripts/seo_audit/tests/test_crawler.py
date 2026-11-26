@@ -243,6 +243,23 @@ class ParseHtmlTests(unittest.TestCase):
         self.assertTrue(extract.canonical_absent)
         self.assertEqual(extract.links, ("https://audit.test/ok.html",))
 
+    def test_canonical_duplicate_counts_empty_and_missing_href_tags(self) -> None:
+        two_empty = crawler.parse_html(
+            '<html><head><link rel="canonical" href=""><link rel="canonical"></head></html>',
+            SEED,
+        )
+        self.assertIsNone(two_empty.canonical)
+        self.assertTrue(two_empty.canonical_absent)
+        self.assertTrue(two_empty.canonical_duplicate)
+
+        mixed = crawler.parse_html(
+            '<html><head><link rel="canonical" href=" "><link rel="canonical" href="/a"></head></html>',
+            SEED,
+        )
+        self.assertEqual(mixed.canonical, "https://audit.test/a")
+        self.assertFalse(mixed.canonical_absent)
+        self.assertTrue(mixed.canonical_duplicate)
+
 
 class ParseRobotsAndSitemapTests(unittest.TestCase):
     def test_robots_star_group_ignores_other_agents_and_comments(self) -> None:

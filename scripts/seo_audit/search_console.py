@@ -190,20 +190,21 @@ def _is_domain_property(value: str) -> bool:
 
 
 def _crawl_urls(report: Any, property_url: str) -> tuple[str, ...]:
-    """URLs finais de paginas HTML 2xx, mais os documentos HTML do sitemap."""
+    """URLs HTML 2xx (solicitada e final) pertencentes a propriedade, mais o sitemap."""
     urls: set[str] = set()
     for page in getattr(report, "pages", ()):
         status = getattr(page, "status", None)
-        url = getattr(page, "final_url", None)
-        if not isinstance(status, int) or not 200 <= status <= 299 or not isinstance(url, str):
+        if not isinstance(status, int) or not 200 <= status <= 299:
             continue
         content_type = (getattr(page, "content_type", None) or "").lower()
-        if content_type:
-            is_html = "text/html" in content_type or "application/xhtml+xml" in content_type
-        else:
-            is_html = crawler.is_crawl_document(url)
-        if is_html and _url_belongs(url, property_url):
-            urls.add(url)
+        has_html_type = "text/html" in content_type or "application/xhtml+xml" in content_type
+        for attr in ("requested_url", "final_url"):
+            url = getattr(page, attr, None)
+            if not isinstance(url, str) or not url:
+                continue
+            is_html = has_html_type if content_type else crawler.is_crawl_document(url)
+            if is_html and _url_belongs(url, property_url):
+                urls.add(url)
     sitemap = getattr(report, "sitemap", None)
     for url in getattr(sitemap, "references", ()):
         if isinstance(url, str) and crawler.is_crawl_document(url) and _url_belongs(url, property_url):

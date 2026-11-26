@@ -174,7 +174,7 @@ class CliEndToEndTests(unittest.TestCase):
         markdown = (final / "report.md").read_text(encoding="utf-8")
         evidence = json.loads(raw)
         self.assertEqual({row["url"] for row in evidence["searchConsole"]["inspections"]},
-                         {f"{SITE}/", f"{SITE}/en/"})
+                         {"http://mansaodolago.com/", f"{SITE}/", f"{SITE}/en/"})
         self.assertEqual(evidence["counts"]["indexingErrors"], 1)
         self.assertEqual(evidence["counts"]["brokenLinks"], 1)
         headings = [line for line in markdown.splitlines() if line.startswith(("# ", "## ", "### "))
