@@ -5,6 +5,7 @@ As respostas HTTP sao fixtures em memoria. Nenhum teste fala com a rede.
 
 from __future__ import annotations
 
+import http.client
 import inspect
 import io
 import json
@@ -372,6 +373,107 @@ class RetryClassificationTests(unittest.TestCase):
         self.assertEqual(attempted.classification, models.CLASS_INCONCLUSIVE)
         self.assertNotIn(CANARY, attempted.result.error_detail or "")
         self.assertEqual(attempted.result.body, b"")
+
+
+class ResilienceTests(unittest.TestCase):
+    def test_transient_gateway_errors_are_retried_before_confirmation(self) -> None:
+        for status in (502, 503, 504):
+            url = HOST + "/gateway"
+            with self.subTest(status=status):
+                recovered = crawler.fetch_with_retries(
+                    url,
+                    FakeFetcher({url: [status_result(url, status), html_result(url, "<title>Ok</title>")]}),
+                    timeout=1,
+                    max_attempts=2,
+                )
+                self.assertEqual((recovered.attempts, recovered.classification), (2, models.CLASS_OK))
+                persistent = crawler.fetch_with_retries(
+                    url, FakeFetcher({url: status_result(url, status)}), timeout=1, max_attempts=2
+                )
+                self.assertEqual(
+                    (persistent.attempts, persistent.classification), (2, models.CLASS_CONFIRMED_5XX)
+                )
+
+    def test_body_read_failure_is_retried_and_never_classified_ok(self) -> None:
+        for failure, classification in (
+            (TimeoutError("lento"), models.CLASS_TIMEOUT),
+            (ConnectionResetError("caiu"), models.CLASS_INCONCLUSIVE),
+            (http.client.IncompleteRead(b""), models.CLASS_INCONCLUSIVE),
+            (None, models.CLASS_INCONCLUSIVE),
+        ):
+
+            class Response:
+                status = 200
+                headers = {"Content-Type": "text/html"}
+                # failure None simula corpo truncado: Content-Length nao cumprido.
+                length = 10 if failure is None else None
+
+                def geturl(self) -> str:
+                    return SEED
+
+                def read(self, size: int) -> bytes:
+                    if failure is not None:
+                        raise failure
+                    return b"<html>"
+
+                def __enter__(self) -> "Response":
+                    return self
+
+                def __exit__(self, *args: object) -> bool:
+                    return False
+
+            with self.subTest(failure=failure), mock.patch.object(
+                crawler.urllib.request, "urlopen", lambda *_a, **_k: Response()
+            ):
+                attempted = crawler.fetch_with_retries(
+                    SEED, crawler.UrllibFetcher(), timeout=1, max_attempts=2
+                )
+                self.assertEqual((attempted.attempts, attempted.classification), (2, classification))
+                self.assertIsNotNone(attempted.result.error_kind)
+                self.assertIsNone(attempted.result.status)
+
+    def test_error_pages_and_external_redirects_are_not_mined(self) -> None:
+        link = '<title>X</title><a href="https://audit.test/{}">l</a>'
+        routes = {
+            SEED: html_result(SEED, '<title>Home</title><a href="/sumiu">s</a><a href="/fora">f</a>'),
+            HOST + "/sumiu": html_result(HOST + "/sumiu", link.format("do-404"), status=404),
+            HOST + "/fora": html_result(
+                HOST + "/fora", link.format("do-externo"), final="https://external.test/x"
+            ),
+        }
+        report, fetcher = crawl(routes)
+        self.assertNotIn(HOST + "/do-404", fetcher.calls)
+        self.assertNotIn(HOST + "/do-externo", fetcher.calls)
+        for url, status, final in (
+            (HOST + "/sumiu", 404, HOST + "/sumiu"),
+            (HOST + "/fora", 200, "https://external.test/x"),
+        ):
+            page = _page(report, url)
+            self.assertEqual((page.status, page.final_url), (status, final))
+            self.assertFalse(page.metadata_collected)
+            self.assertFalse(page.title_absent)
+            self.assertIsNone(page.title)
+            self.assertEqual(page.links, ())
+
+    def test_seed_redirect_to_another_domain_does_not_move_the_scope(self) -> None:
+        routes = {
+            SEED: html_result(
+                SEED, '<title>Fora</title><a href="/dentro">d</a>', final="https://external.test/"
+            ),
+        }
+        report, fetcher = crawl(routes)
+        self.assertEqual(report.crawl_host, "audit.test")
+        self.assertFalse(_page(report, SEED).metadata_collected)
+        self.assertFalse(any(call.startswith("https://external.test") for call in fetcher.calls))
+
+    def test_invalid_port_rejects_only_that_reference(self) -> None:
+        self.assertIsNone(crawler.normalize_url("https://example.test:invalid/"))
+        self.assertIsNone(crawler.normalize_url("https://example.test:99999/"))
+        self.assertIsNone(crawler.normalize_url("//[quebrado/", SEED))
+        extract = crawler.parse_html(
+            '<a href="https://example.test:invalid/">x</a><a href="//[y">y</a><a href="/ok">ok</a>', SEED
+        )
+        self.assertEqual(extract.links, (HOST + "/ok",))
 
 
 class CrawlFixtureTests(unittest.TestCase):

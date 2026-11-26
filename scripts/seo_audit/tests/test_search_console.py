@@ -97,6 +97,14 @@ def inspection(url, *, verdict="PASS", robots="ALLOWED", indexing="INDEXING_ALLO
     return {"inspectionResult": {"indexStatusResult": fields}}
 
 
+def metric_row(key=None, **overrides):
+    row = {"clicks": 1, "impressions": 10, "ctr": 0.1, "position": 2.0}
+    if key is not None:
+        row["keys"] = [key]
+    row.update(overrides)
+    return row
+
+
 class SearchConsoleTests(unittest.TestCase):
     def make_crawl(self):
         return Crawl(
@@ -156,8 +164,8 @@ class SearchConsoleTests(unittest.TestCase):
     def test_analytics_pages_are_fetched_until_short_page(self):
         service = self.valid_service(analytics=[
             {"rows": []},
-            {"rows": [{"keys": ["a"]}, {"keys": ["b"]}]},
-            {"rows": [{"keys": ["c"]}]},
+            {"rows": [metric_row("a"), metric_row("b")]},
+            {"rows": [metric_row("c")]},
         ])
         report = sc.audit_search_console(self.make_crawl(), "2026-11-01", "2026-11-20", service=service, page_size=2)
         pages_queries = [body for _, body in service.queries if body.get("dimensions") == ["page"]]
@@ -176,13 +184,41 @@ class SearchConsoleTests(unittest.TestCase):
                 self.assertEqual({row["inspectionUrl"] for row in service.inspected}, expected)
                 self.assertLessEqual({row["siteUrl"] for row in service.inspected}, {prop})
 
-    def test_domain_property_wins_over_url_prefixes(self):
-        service = self.valid_service(sites={"siteEntry": [
-            {"siteUrl": "https://www.mansaodolago.com/"},
-            {"siteUrl": "sc-domain:mansaodolago.com"},
-            {"siteUrl": "https://mansaodolago.com/"},
-        ]})
-        self.assertEqual(sc._resolve_property(service, 1, lambda _s: None), "sc-domain:mansaodolago.com")
+    def test_domain_plus_url_prefix_is_ambiguous_and_nothing_is_queried(self):
+        for prefix in ("https://www.mansaodolago.com/", "https://mansaodolago.com/"):
+            service = self.valid_service(sites={"siteEntry": [
+                {"siteUrl": prefix},
+                {"siteUrl": "sc-domain:mansaodolago.com"},
+            ]})
+            with self.subTest(prefix=prefix), self.assertRaisesRegex(sc.SearchConsoleError, "ambigua"):
+                sc.audit_search_console(self.make_crawl(), "2026-11-01", "2026-11-20", service=service)
+            self.assertEqual(service.queries, [])
+            self.assertEqual(service.inspected, [])
+
+    def test_incomplete_analytics_rows_fail_closed(self):
+        full = {"rows": [metric_row()]}
+        cases = (
+            [{"rows": [{}]}],
+            [{"rows": [metric_row(ctr=None)]}],
+            [{"rows": [metric_row(clicks="9")]}],
+            [{"rows": [metric_row(position=True)]}],
+            [{"rows": [metric_row(impressions=float("nan"))]}],
+            [{"rows": [metric_row(), metric_row()]}],
+            [full, {"rows": [{"keys": ["https://mansaodolago.com/a"]}]}],
+            [full, {"rows": [metric_row()]}],
+            [full, {"rows": [metric_row("")]}],
+        )
+        for analytics in cases:
+            service = self.valid_service(analytics=analytics)
+            with self.subTest(analytics=analytics), self.assertRaisesRegex(sc.SearchConsoleError, "inconclusiva"):
+                sc.audit_search_console(self.make_crawl(), "2026-11-01", "2026-11-20", service=service)
+            self.assertEqual(service.inspected, [])
+
+    def test_absent_analytics_rows_are_a_legitimate_empty_result(self):
+        service = self.valid_service(analytics=[{}, {"rows": []}])
+        report = sc.audit_search_console(self.make_crawl(), "2026-11-01", "2026-11-20", service=service)
+        self.assertEqual(report.aggregate, {})
+        self.assertEqual(report.pages, ())
 
     def test_domain_scope_covers_subdomains_but_not_lookalikes(self):
         prop = "sc-domain:mansaodolago.com"

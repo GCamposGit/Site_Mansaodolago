@@ -10,6 +10,7 @@ A credencial do Search Console nao e lida aqui.
 from __future__ import annotations
 
 import heapq
+import http.client
 import json
 import re
 import sys
@@ -52,6 +53,7 @@ try:
         SitemapDocument,
         SitemapReport,
     )
+    from .sanitize import to_plain
 except ImportError:
     from models import (
         CLASS_CONFIRMED_4XX,
@@ -82,6 +84,7 @@ except ImportError:
         SitemapDocument,
         SitemapReport,
     )
+    from sanitize import to_plain
 
 DEFAULT_SEED = "https://mansaodolago.com"
 DEFAULT_TIMEOUT_S = 10.0
@@ -94,6 +97,7 @@ USER_AGENT = "MansaodolagoSEOAudit/1.0 (+https://mansaodolago.com)"
 
 _PAGE_SUFFIXES = {".html", ".htm", ".php", ".asp", ".aspx", ".xhtml"}
 _RETRYABLE = {CLASS_TIMEOUT, CLASS_RATE_LIMITED}
+_TRANSIENT_STATUS = {502, 503, 504}
 _CHARSET_RE = re.compile(r"charset=[\"']?([A-Za-z0-9._-]+)", re.IGNORECASE)
 
 
@@ -136,6 +140,7 @@ class HtmlExtract:
     links: tuple[str, ...]
     duplicate_links: tuple[str, ...]
     ignored_non_http: tuple[str, ...]
+    collected: bool = True
 
 
 @dataclass(frozen=True)
@@ -221,10 +226,18 @@ def normalize_url(url: str, base: str | None = None) -> str | None:
     elif scheme in ("http", "https"):
         candidate = raw
     else:
-        candidate = urljoin(base, raw)
+        try:
+            candidate = urljoin(base, raw)
+        except ValueError:
+            return None
     if any(ch.isspace() for ch in candidate):
         return None
-    parts = urlsplit(candidate)
+    try:
+        parts = urlsplit(candidate)
+        port = parts.port
+    except ValueError:
+        # Porta ou host malformado invalida so esta referencia.
+        return None
     normalized_scheme = parts.scheme.lower()
     if normalized_scheme not in ("http", "https"):
         return None
@@ -235,7 +248,6 @@ def normalize_url(url: str, base: str | None = None) -> str | None:
         host = host.encode("idna").decode("ascii")
     except UnicodeError:
         return None
-    port = parts.port
     if (normalized_scheme == "http" and port == 80) or (
         normalized_scheme == "https" and port == 443
     ):
@@ -256,6 +268,11 @@ def origin_key(url: str) -> tuple[str, int | None]:
 
 def same_site(url: str, reference: str) -> bool:
     return origin_key(url) == origin_key(reference)
+
+
+def _same_owner(url: str, seed: str) -> bool:
+    """Mesmo host, aceitando a troca entre apex e www."""
+    return host_name(url).removeprefix("www.") == host_name(seed).removeprefix("www.")
 
 
 def host_name(url: str) -> str:
@@ -317,7 +334,7 @@ def classify_result(result: FetchResult) -> str:
 
 
 def _should_retry(result: FetchResult, classification: str) -> bool:
-    if classification in _RETRYABLE:
+    if classification in _RETRYABLE or result.status in _TRANSIENT_STATUS:
         return True
     # 3xx ja e uma resposta. So repetimos falha de transporte, sem status.
     return classification == CLASS_INCONCLUSIVE and result.status is None
@@ -463,20 +480,22 @@ def _decode_html(body: bytes, content_type: str | None) -> str:
         return body.decode("utf-8", errors="replace")
 
 
-def _empty_html() -> HtmlExtract:
+def _uncollected_html() -> HtmlExtract:
+    """HTML nao analisado: nada se afirma sobre ausencia de metadados."""
     return HtmlExtract(
         title=None,
-        title_absent=True,
+        title_absent=False,
         title_duplicate=False,
         meta_description=None,
-        meta_description_absent=True,
+        meta_description_absent=False,
         meta_description_duplicate=False,
         canonical=None,
-        canonical_absent=True,
+        canonical_absent=False,
         canonical_duplicate=False,
         links=(),
         duplicate_links=(),
         ignored_non_http=(),
+        collected=False,
     )
 
 
@@ -703,6 +722,8 @@ class UrllibFetcher:
             return _from_http_error(url, exc)
         except urllib.error.URLError as exc:
             return _from_url_error(url, exc)
+        except http.client.HTTPException as exc:
+            return _failure(url, ERROR_INCONCLUSIVE, type(exc).__name__)
         except OSError as exc:
             if _is_timeout(exc):
                 return _failure(url, ERROR_TIMEOUT, "TimeoutError")
@@ -735,13 +756,20 @@ def _header_content_type(headers: Any) -> str | None:
 
 
 def _read_limited(source: Any) -> bytes:
+    """Le ate MAX_BODY. Falha ou corpo truncado sobe para a tentativa."""
+    raw = source.read(MAX_BODY + 1) or b""
+    remaining = getattr(source, "length", None)
+    if len(raw) <= MAX_BODY and isinstance(remaining, int) and remaining > 0:
+        raise http.client.IncompleteRead(b"", remaining)
+    return raw[:MAX_BODY]
+
+
+def _read_error_body(source: Any) -> bytes:
+    """Em resposta de erro o status ja e a evidencia; o corpo e opcional."""
     try:
-        raw = source.read(MAX_BODY + 1)
+        return _read_limited(source)
     except Exception:
         return b""
-    if not raw:
-        return b""
-    return raw[:MAX_BODY]
 
 
 def _from_http(url: str, response: Any) -> FetchResult:
@@ -774,7 +802,7 @@ def _from_http_error(url: str, exc: urllib.error.HTTPError) -> FetchResult:
         final_url=final_url,
         status=status,
         content_type=_header_content_type(exc.headers),
-        body=_read_limited(exc),
+        body=_read_error_body(exc),
         error_kind=None,
         error_detail=None,
     )
@@ -815,11 +843,12 @@ def _page_from_extract(
         redirected=requested != final,
         attempts=attempted.attempts,
         error_kind=attempted.result.error_kind,
+        metadata_collected=extract.collected,
     )
 
 
 def _blank_page(requested: str, final: str, attempted: AttemptedFetch) -> PageRecord:
-    return _page_from_extract(requested, final, attempted, _empty_html())
+    return _page_from_extract(requested, final, attempted, _uncollected_html())
 
 
 def _decode_text(body: bytes) -> str:
@@ -1189,7 +1218,9 @@ def crawl_site(
 
     seed_attempt = fetch(normalized_seed)
     # O host da navegacao HTML e o destino final do seed, depois dos redirects.
-    reference = normalize_url(seed_attempt.result.final_url) or normalized_seed
+    # Um redirect do seed para outro dominio nao muda o host autorizado.
+    seed_final = normalize_url(seed_attempt.result.final_url) or normalized_seed
+    reference = seed_final if _same_owner(seed_final, normalized_seed) else normalized_seed
 
     robots, robot_sitemaps = _load_robots(reference, fetch)
     sitemap_seeds = robot_sitemaps if robot_sitemaps else (_replace_path(reference, "/sitemap.xml"),)
@@ -1227,7 +1258,12 @@ def crawl_site(
         final = normalize_url(attempted.result.final_url) or requested
         visited.add(requested)
         visited.add(final)
-        extractable = _is_html_document(attempted.result.content_type, attempted.result.body)
+        # So HTML 2xx entregue pelo host autorizado e analisado e expandido.
+        extractable = (
+            attempted.classification == CLASS_OK
+            and same_site(final, reference)
+            and _is_html_document(attempted.result.content_type, attempted.result.body)
+        )
         if extractable and attempted.result.body:
             extract = parse_html(_decode_html(attempted.result.body, attempted.result.content_type), final)
             page = _page_from_extract(requested, final, attempted, extract)
@@ -1235,7 +1271,7 @@ def crawl_site(
             extract = None
             page = _blank_page(requested, final, attempted)
         pages.append(page)
-        if extract is None or not same_site(final, reference):
+        if extract is None:
             return
         for link in extract.links:
             if same_site(link, reference) and is_crawl_document(link):
@@ -1297,7 +1333,7 @@ def main(argv: list[str] | None = None) -> int:
     except CrawlError as exc:
         print(str(exc), file=sys.stderr)
         return 2
-    json.dump(report.to_dict(), sys.stdout, ensure_ascii=False, indent=2, sort_keys=True)
+    json.dump(to_plain(report), sys.stdout, ensure_ascii=False, indent=2, sort_keys=True)
     sys.stdout.write("\n")
     return 0
 

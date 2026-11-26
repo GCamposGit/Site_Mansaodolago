@@ -3,30 +3,57 @@
 from __future__ import annotations
 
 import json
-import re
 from datetime import datetime, timezone
 from typing import Any
 
+from .sanitize import to_plain
 
-_SENSITIVE = re.compile(r"credential|token|private[_-]?key|client[_-]?email|authorization", re.I)
+_UNCHECKED_BUCKETS = (("timeouts", "Timeout"), ("rate_limited", "Rate limited (429)"),
+                      ("inconclusive", "Inconclusivo"))
 
 
-def _plain(value: Any) -> Any:
-    convert = getattr(value, "to_dict", None)
-    if callable(convert):
-        return _plain(convert())
-    if isinstance(value, dict):
-        return {key: _plain(item) for key, item in value.items() if not _SENSITIVE.search(str(key))}
-    if isinstance(value, (tuple, list)):
-        return [_plain(item) for item in value]
-    return value
+class IncompleteCrawlError(ValueError):
+    """Uma secao obrigatoria do crawl nao foi coletada."""
+
+
+def _collection_failed(item: dict[str, Any]) -> bool:
+    """Sem resposta definitiva: transporte, timeout, 429 ou 5xx. 404 e ausencia observada."""
+    status = item.get("status")
+    return not isinstance(status, int) or status == 429 or status >= 500
+
+
+def require_complete_crawl(crawl: Any) -> None:
+    """Impede publicar quando seed, robots.txt ou sitemap nao foram coletados."""
+    data = to_plain(crawl)
+    if not isinstance(data, dict):
+        raise IncompleteCrawlError("crawl nao serializavel")
+    seed = str(data.get("seed", "")).rstrip("/")
+    failed: list[str] = []
+    if not any(
+        str(page.get("requested_url", "")).rstrip("/") == seed
+        and isinstance(page.get("status"), int) and 200 <= page["status"] <= 299
+        and page.get("metadata_collected", True)
+        for page in data.get("pages", [])
+    ):
+        failed.append("pagina inicial")
+    robots = data.get("robots", {})
+    if not robots.get("parsed") and _collection_failed(robots):
+        failed.append("robots.txt")
+    documents = data.get("sitemap", {}).get("documents", [])
+    has_urlset = any(doc.get("parsed") and doc.get("kind") != "index" for doc in documents)
+    if not has_urlset and any(_collection_failed(doc) for doc in documents):
+        failed.append("sitemap.xml")
+    if failed:
+        raise IncompleteCrawlError("crawl incompleto; falha de coleta em: " + ", ".join(failed))
 
 
 def build_evidence(crawl: Any, search: Any, *, base_url: str, start_date: str,
                    end_date: str, parameters: dict[str, Any], commit: str,
+                   source: dict[str, Any] | None = None,
                    generated_at: datetime | None = None) -> dict[str, Any]:
     """Return the normalized source data plus reproducibility metadata."""
-    crawl_data, search_data = _plain(crawl), _plain(search)
+    require_complete_crawl(crawl)
+    crawl_data, search_data = to_plain(crawl), to_plain(search)
     if not isinstance(crawl_data, dict) or not isinstance(search_data, dict):
         raise ValueError("fontes de auditoria nao serializaveis")
     if not search_data.get("property") or search_data.get("dataState") != "final":
@@ -39,19 +66,42 @@ def build_evidence(crawl: Any, search: Any, *, base_url: str, start_date: str,
         "ticket": "MDL-01",
         "generatedAt": stamp.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
         "commit": commit,
-        "input": {"baseUrl": base_url, "property": search_data["property"],
-                  "startDate": start_date, "endDate": end_date, "parameters": _plain(parameters)},
+        "source": dict(source or {}),
+        "input": {"baseUrl": to_plain(base_url), "property": search_data["property"],
+                  "startDate": start_date, "endDate": end_date, "parameters": to_plain(parameters)},
         "searchConsole": search_data,
         "crawl": crawl_data,
         "counts": {
             "crawledPages": len(crawl_data.get("pages", [])),
             "checkedLinks": len(crawl_data.get("links", {}).get("checks", [])),
             "brokenLinks": len(crawl_data.get("links", {}).get("confirmed_4xx", [])) + len(crawl_data.get("links", {}).get("confirmed_5xx", [])),
+            "timeoutLinks": len(crawl_data.get("links", {}).get("timeouts", [])),
+            "rateLimitedLinks": len(crawl_data.get("links", {}).get("rate_limited", [])),
+            "inconclusiveLinks": len(crawl_data.get("links", {}).get("inconclusive", [])),
+            "uncollectedPages": len(_uncollected_pages(crawl_data)),
             "indexedUrlsInspected": len(search_data.get("inspections", [])),
             "indexingErrors": sum(row.get("classification") == "error" for row in search_data.get("inspections", [])),
             "indexingUnknown": sum(row.get("classification") == "unknown" for row in search_data.get("inspections", [])),
         },
     }
+
+
+def _uncollected_pages(crawl: dict[str, Any]) -> list[dict[str, Any]]:
+    return [page for page in crawl.get("pages", []) if page.get("metadata_collected") is False]
+
+
+def _line(value: Any) -> str:
+    """Texto externo em uma unica linha."""
+    return " ".join(str(value).splitlines())
+
+
+def _cell(value: Any) -> str:
+    """Celula de tabela: sem quebra de linha e com pipe escapado."""
+    return _line(value).replace("\\", "\\\\").replace("|", "\\|")
+
+
+def _row(*values: Any) -> str:
+    return "| " + " | ".join(_cell(value) for value in values) + " |"
 
 
 def _finding(severity: str, title: str, url: str, evidence: str, impact: str,
@@ -82,7 +132,7 @@ def findings(evidence: dict[str, Any]) -> list[dict[str, Any]]:
             "Corrigir o destino, substituir o link ou remover a referencia na pagina de origem.", 2))
     for page in crawl.get("pages", []):
         status = page.get("status")
-        if isinstance(status, int) and status >= 400:
+        if isinstance(status, int) and status >= 400 and status != 429:
             found.append(_finding("alta" if status < 500 else "media", "Pagina com resposta de erro",
                 page.get("requested_url", ""), f"HTTP {status}",
                 "A pagina nao foi entregue com sucesso a visitantes ou rastreadores.",
@@ -92,7 +142,7 @@ def findings(evidence: dict[str, Any]) -> list[dict[str, Any]]:
             ("title_absent", "title_duplicate", "title", "Adicionar title unico, descritivo e especifico para a pagina."),
             ("meta_description_absent", "meta_description_duplicate", "meta description", "Escrever meta description unica que resuma o conteudo e motive o clique."),
         ):
-            if page.get(absent) or page.get(duplicate):
+            if page.get("metadata_collected", True) and (page.get(absent) or page.get(duplicate)):
                 issue = "ausente" if page.get(absent) else "duplicado"
                 found.append(_finding("media", f"{label} {issue}", page["requested_url"],
                     f"{label} {issue}", "Trechos de busca podem ficar ausentes ou repetidos entre paginas.", recommendation, 4 if label == "title" else 5))
@@ -114,35 +164,58 @@ def findings(evidence: dict[str, Any]) -> list[dict[str, Any]]:
 def render_markdown(evidence: dict[str, Any]) -> str:
     search, crawl = evidence["searchConsole"], evidence["crawl"]
     metrics = search.get("aggregate", {})
-    lines = ["# Auditoria SEO — MDL-01", "", f"Gerado: {evidence['generatedAt']} · Commit: `{evidence['commit']}`",
+    source = evidence.get("source", {})
+    lines = ["# Auditoria SEO — MDL-01", "", f"Gerado: {evidence['generatedAt']} · Commit base: `{evidence['commit']}`"]
+    if source.get("digest"):
+        lines.append(f"Fontes executadas ({source.get('algorithm')}, `{source.get('root')}`): `{source['digest']}` · "
+                     f"identicas ao commit base: {'sim' if source.get('matchesCommit') else 'nao'}")
+    totals = (_row(*(metrics.get(field) for field in ("clicks", "impressions", "ctr", "position")))
+              if metrics else _row("Nenhuma linha retornada pela API", "—", "—", "—"))
+    lines.extend([
         f"Propriedade: `{search['property']}` · Periodo: {search['startDate']} a {search['endDate']}",
-        f"URL-base: {evidence['input']['baseUrl']}", "", "## Search Console", "",
-        "| Cliques | Impressoes | CTR | Posicao media |", "|---:|---:|---:|---:|",
-        f"| {metrics.get('clicks')} | {metrics.get('impressions')} | {metrics.get('ctr')} | {metrics.get('position')} |", "",
-        "### Desempenho por pagina", "", "| Pagina | Cliques | Impressoes | CTR | Posicao |", "|---|---:|---:|---:|---:|"]
+        f"URL-base: {_line(evidence['input']['baseUrl'])}", "", "## Search Console", "",
+        "| Cliques | Impressoes | CTR | Posicao media |", "|---:|---:|---:|---:|", totals, "",
+        "### Desempenho por pagina", "", "| Pagina | Cliques | Impressoes | CTR | Posicao |", "|---|---:|---:|---:|---:|"])
     for row in search.get("pages", []):
         keys = row.get("keys", [])
-        lines.append(f"| {keys[0] if keys else '(sem URL)'} | {row.get('clicks')} | {row.get('impressions')} | {row.get('ctr')} | {row.get('position')} |")
+        lines.append(_row(keys[0] if keys else "(sem URL)", row.get("clicks"), row.get("impressions"),
+                          row.get("ctr"), row.get("position")))
     if not search.get("pages"):
         lines.append("| Nenhuma linha retornada pela API | — | — | — | — |")
     lines.extend(["", "### Indexacao", "", "| URL | Classificacao | Veredito | Cobertura | Evidencia |", "|---|---|---|---|---|"])
     for row in search.get("inspections", []):
-        lines.append(f"| {row['url']} | {row.get('classification')} | {row.get('verdict')} | {row.get('coverageState')} | erros: {', '.join(row.get('errors', []))}; desconhecidos: {', '.join(row.get('unknown', []))} |")
+        detail = f"erros: {', '.join(row.get('errors', []))}; desconhecidos: {', '.join(row.get('unknown', []))}"
+        lines.append(_row(row["url"], row.get("classification"), row.get("verdict"), row.get("coverageState"), detail))
     if not search.get("inspections"):
         lines.append("| Nenhuma URL inspecionada | unknown | — | — | Cobertura de inspecao vazia |")
     lines.extend(["", "## Crawl", "", f"Paginas: {len(crawl.get('pages', []))}; links verificados: {len(crawl.get('links', {}).get('checks', []))}; quebrados confirmados: {evidence['counts']['brokenLinks']}",
         "", "### Titles e meta descriptions", "", "| URL | Title | Meta description |", "|---|---|---|"])
     for page in crawl.get("pages", []):
-        lines.append(f"| {page['requested_url']} | {page.get('title') or 'AUSENTE'} | {page.get('meta_description') or 'AUSENTE'} |")
+        missing = "AUSENTE" if page.get("metadata_collected", True) else "NAO COLETADO"
+        lines.append(_row(page["requested_url"], page.get("title") or missing, page.get("meta_description") or missing))
     lines.extend(["", "### Links quebrados", "", "| URL | HTTP | Classificacao |", "|---|---:|---|"])
     broken = crawl.get("links", {}).get("confirmed_4xx", []) + crawl.get("links", {}).get("confirmed_5xx", [])
-    lines.extend(f"| {row['url']} | {row.get('status')} | {row.get('classification')} |" for row in broken)
+    lines.extend(_row(row["url"], row.get("status"), row.get("classification")) for row in broken)
     if not broken:
         lines.append("| Nenhum link quebrado confirmado | — | — |")
+    lines.extend(["", "### Verificacoes inconclusivas", "",
+        "Os destinos abaixo nao foram confirmados como integros nem como quebrados."])
+    for bucket, label in _UNCHECKED_BUCKETS:
+        checks = crawl.get("links", {}).get(bucket, [])
+        lines.extend(["", f"#### {label}: {len(checks)}"])
+        if checks:
+            lines.extend(["", "| URL | HTTP | Tentativas |", "|---|---:|---:|"])
+            lines.extend(_row(row["url"], row.get("status") or "—", row.get("attempts")) for row in checks)
+    uncollected = _uncollected_pages(crawl)
+    lines.extend(["", f"#### Paginas sem metadados coletados: {len(uncollected)}"])
+    if uncollected:
+        lines.extend(["", "| URL | URL final | HTTP | Tentativas |", "|---|---|---:|---:|"])
+        lines.extend(_row(page["requested_url"], page.get("final_url"), page.get("status") or "—",
+                          page.get("attempts")) for page in uncollected)
     robots = crawl.get("robots", {})
     lines.extend(["", "### robots.txt", "", f"URL: {robots.get('url')} · HTTP {robots.get('status')} · parseado: {robots.get('parsed')} · allow: {len(robots.get('allow', []))} · disallow: {len(robots.get('disallow', []))}"])
-    lines.extend(f"- Allow: `{rule}`" for rule in robots.get("allow", []))
-    lines.extend(f"- Disallow: `{rule}`" for rule in robots.get("disallow", []))
+    lines.extend(f"- Allow: `{_line(rule)}`" for rule in robots.get("allow", []))
+    lines.extend(f"- Disallow: `{_line(rule)}`" for rule in robots.get("disallow", []))
     sitemap = crawl.get("sitemap", {})
     lines.extend(["", "### sitemap.xml", "", f"Documentos: {len(sitemap.get('documents', []))} · URLs declaradas: {len(sitemap.get('references', []))} · nao alcancadas: {len(sitemap.get('not_reached', []))}"])
     lines.extend(f"- `{doc.get('url')}` · HTTP {doc.get('status')} · parseado: {doc.get('parsed')} · tipo: {doc.get('kind')} · URLs: {len(doc.get('references', []))}" for doc in sitemap.get("documents", []))
@@ -153,7 +226,7 @@ def render_markdown(evidence: dict[str, Any]) -> str:
         lines.append("Nenhum achado acionavel identificado nas verificacoes concluidas.")
     for item in items:
         lines.extend([f"### P{item['priority']} · {item['severity']} · {item['title']}",
-            f"- URL/evidencia: `{item['url']}` — {item['evidence']}", f"- Impacto: {item['impact']}", f"- Recomendacao: {item['recommendation']}", ""])
+            f"- URL/evidencia: `{_line(item['url'])}` — {_line(item['evidence'])}", f"- Impacto: {item['impact']}", f"- Recomendacao: {item['recommendation']}", ""])
     lines.extend(["## Cobertura e limitacoes", "",
         f"Crawl limitado a {evidence['input']['parameters'].get('maxPages')} paginas e a URLs publicamente alcancaveis/encontradas no sitemap.",
         "Search Analytics retorna as linhas disponibilizadas pela API para as consultas paginadas; dados agregados podem nao coincidir com a soma das linhas por pagina devido a limites/privacidade da API.",

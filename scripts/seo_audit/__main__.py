@@ -4,26 +4,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shutil
-import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from . import crawler, search_console
-from .report import build_evidence, render_json, render_markdown
-
-
-def _commit() -> str:
-    try:
-        result = subprocess.run(["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True, timeout=5)
-        value = result.stdout.strip()
-        return value if value else "unknown"
-    except (OSError, subprocess.SubprocessError):
-        return "unknown"
+from . import crawler, provenance, search_console
+from .report import build_evidence, render_json, render_markdown, require_complete_crawl
 
 
 def run_audit(*, base_url: str, start_date: str, end_date: str,
@@ -33,7 +22,11 @@ def run_audit(*, base_url: str, start_date: str, end_date: str,
               search_fn: Any = search_console.audit_search_console) -> tuple[Path, Path]:
     """Collect both sources before writing, then publish by one directory rename."""
     output_dir = output_dir.resolve()
+    # Registrados antes da coleta: descrevem o codigo que vai executar.
+    commit, source = provenance.commit(), provenance.collect_source()
     crawl_report = crawl_fn(base_url, timeout=timeout, max_pages=max_pages)
+    # Falha de coleta obrigatoria aborta antes de gastar quota do Search Console.
+    require_complete_crawl(crawl_report)
     service = service_fn()
     search_report = search_fn(crawl_report, start_date, end_date, service=service)
     generated = datetime.now(timezone.utc)
@@ -46,7 +39,7 @@ def run_audit(*, base_url: str, start_date: str, end_date: str,
               "searchConsoleMaxAttempts": search_console.DEFAULT_MAX_ATTEMPTS}
     evidence = build_evidence(crawl_report, search_report, base_url=base_url,
         start_date=start_date, end_date=end_date, parameters=params,
-        commit=_commit(), generated_at=generated)
+        commit=commit, source=source, generated_at=generated)
     output_dir.mkdir(parents=True, exist_ok=True)
     stamp = generated.strftime("%Y%m%dT%H%M%SZ")
     final_dir = output_dir / f"MDL-01-seo-audit-{stamp}"

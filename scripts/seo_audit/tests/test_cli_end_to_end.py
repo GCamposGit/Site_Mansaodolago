@@ -182,7 +182,7 @@ class CliEndToEndTests(unittest.TestCase):
         self.assertEqual(headings, [
             "# Auditoria SEO — MDL-01", "## Search Console", "### Desempenho por pagina",
             "### Indexacao", "## Crawl", "### Titles e meta descriptions", "### Links quebrados",
-            "### robots.txt", "### sitemap.xml", "## Achados priorizados", "## Cobertura e limitacoes",
+            "### Verificacoes inconclusivas", "### robots.txt", "### sitemap.xml", "## Achados priorizados", "## Cobertura e limitacoes",
         ])
         self.assertIn(f"| {SITE}/quebrado.html | 404 | confirmed_4xx |", markdown)
         self.assertIn("Link quebrado confirmado", markdown)
@@ -191,6 +191,13 @@ class CliEndToEndTests(unittest.TestCase):
         for output in (raw, markdown, result.stdout, result.stderr):
             self.assertNotIn("CANARY", output)
             self.assertNotIn("canary@example.test", output)
+
+    def test_unreachable_site_exits_nonzero_without_artifacts(self) -> None:
+        # Proxy apontando para uma porta fechada: toda a coleta falha.
+        result = self.run_cli(http_proxy="http://127.0.0.1:9", https_proxy="http://127.0.0.1:9")
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("crawl incompleto", result.stderr)
+        self.assertFalse((self.root / "output").exists())
 
     def test_missing_property_exits_nonzero_without_artifacts(self) -> None:
         result = self.run_cli(FAKE_NO_PROPERTY="1")

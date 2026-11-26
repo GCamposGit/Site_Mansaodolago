@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import time
 from dataclasses import dataclass
@@ -17,6 +18,7 @@ PROPERTY_DOMAIN = "mansaodolago.com"
 MAX_INSPECTIONS_PER_DAY = 2_000
 MAX_ANALYTICS_PAGE_SIZE = 25_000
 DEFAULT_MAX_ATTEMPTS = 3
+_METRIC_FIELDS = ("clicks", "impressions", "ctr", "position")
 _PROPERTY_SCHEME = re.compile(r"^https?://", re.IGNORECASE)
 
 
@@ -130,7 +132,10 @@ def audit_search_console(
         raise SearchConsoleError("quota diaria de URL Inspection insuficiente para o conjunto descoberto")
 
     aggregate_rows = _query(service, property_url, start_date, end_date, "final", page_size, max_attempts, sleep)
-    aggregate = _metrics(aggregate_rows[0] if aggregate_rows else {})
+    if len(aggregate_rows) > 1:
+        raise SearchConsoleError("resposta Search Analytics inconclusiva")
+    # Sem linhas a API nao informou totais: o agregado fica vazio.
+    aggregate = {field: aggregate_rows[0][field] for field in _METRIC_FIELDS} if aggregate_rows else {}
     page_rows = _query(service, property_url, start_date, end_date, "final", page_size, max_attempts, sleep, dimensions=["page"])
     inspections = tuple(
         _inspect(service, property_url, url, max_attempts, sleep) for url in urls
@@ -151,11 +156,7 @@ def _resolve_property(service: Any, attempts: int, sleep: Callable[[float], None
     response = _execute(lambda: service.sites().list(), attempts, sleep)
     sites = response.get("siteEntry", []) if isinstance(response, dict) else []
     matches = [site.get("siteUrl") for site in sites if isinstance(site, dict) and _property_matches(site.get("siteUrl"))]
-    # A propriedade de dominio cobre todos os protocolos e subdominios, entao
-    # vence qualquer URL-prefix. Entre varias URL-prefix nao ha escolha segura.
-    domain_matches = [value for value in matches if _is_domain_property(value)]
-    if domain_matches:
-        matches = domain_matches
+    # Mais de uma correspondencia nunca e desempatada: a escolha seria silenciosa.
     if len(matches) != 1:
         raise SearchConsoleError("propriedade mansaodolago.com ausente ou ambigua no Search Console")
     return matches[0]
@@ -242,7 +243,7 @@ def _query(service: Any, property_url: str, start: str, end: str, state: str, pa
         if not isinstance(response, dict):
             raise SearchConsoleError("resposta Search Analytics inconclusiva")
         batch = response.get("rows", [])
-        if not isinstance(batch, list) or any(not isinstance(row, dict) for row in batch):
+        if not isinstance(batch, list) or any(not _valid_row(row, len(dimensions or ())) for row in batch):
             raise SearchConsoleError("resposta Search Analytics inconclusiva")
         rows.extend(batch)
         if len(batch) < page_size:
@@ -250,15 +251,24 @@ def _query(service: Any, property_url: str, start: str, end: str, state: str, pa
         start_row += len(batch)
 
 
-def _metrics(row: dict[str, Any]) -> dict[str, Any]:
-    out: dict[str, Any] = {}
-    for field in ("clicks", "impressions", "ctr", "position"):
+def _valid_row(row: Any, dimension_count: int) -> bool:
+    """Linha completa: quatro metricas finitas e uma chave por dimensao pedida."""
+    if not isinstance(row, dict):
+        return False
+    for field in _METRIC_FIELDS:
         value = row.get(field)
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            out[field] = value
-        else:
-            out[field] = None
-    return out
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return False
+        if not math.isfinite(value) or value < 0:
+            return False
+    if dimension_count == 0:
+        return True
+    keys = row.get("keys")
+    return (
+        isinstance(keys, list)
+        and len(keys) == dimension_count
+        and all(isinstance(key, str) and key for key in keys)
+    )
 
 
 def _inspect(service: Any, property_url: str, url: str, attempts: int, sleep: Callable[[float], None]) -> Inspection:

@@ -90,6 +90,7 @@ class PageRecord(ReportModel):
     redirected: bool
     attempts: int
     error_kind: str | None
+    metadata_collected: bool = True
 
 
 @dataclass(frozen=True)
