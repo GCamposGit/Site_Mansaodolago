@@ -1,12 +1,12 @@
 {
-  "commit": "d7f07e6fd20d19e452eb70756646ec0fd14e10a9",
+  "commit": "671e3fd053c57090f1a652fcb59d4c1e0719bb9d",
   "counts": {
     "brokenLinks": 2,
     "checkedLinks": 62,
     "crawledPages": 36,
     "inconclusiveLinks": 0,
-    "indexedUrlsInspected": 34,
-    "indexingErrors": 6,
+    "indexedUrlsInspected": 36,
+    "indexingErrors": 8,
     "indexingUnknown": 0,
     "rateLimitedLinks": 0,
     "timeoutLinks": 0,
@@ -3102,7 +3102,7 @@
       ]
     }
   },
-  "generatedAt": "2026-11-26T17:37:28.894044Z",
+  "generatedAt": "2026-11-26T17:57:52.905395Z",
   "input": {
     "baseUrl": "https://mansaodolago.com",
     "endDate": "2026-11-23",
@@ -3130,6 +3130,20 @@
     "dataState": "final",
     "endDate": "2026-11-23",
     "inspections": [
+      {
+        "classification": "error",
+        "coverageState": "Página com redirecionamento",
+        "errors": [
+          "verdict"
+        ],
+        "indexingState": "INDEXING_ALLOWED",
+        "lastCrawlTime": "2026-11-11T16:57:04Z",
+        "pageFetchState": "SUCCESSFUL",
+        "robotsTxtState": "ALLOWED",
+        "unknown": [],
+        "url": "https://mansaodolago.com/",
+        "verdict": "NEUTRAL"
+      },
       {
         "classification": "ok",
         "coverageState": "Enviada e indexada",
@@ -3539,6 +3553,20 @@
         "verdict": "PASS"
       },
       {
+        "classification": "error",
+        "coverageState": "Página com redirecionamento",
+        "errors": [
+          "verdict"
+        ],
+        "indexingState": "INDEXING_ALLOWED",
+        "lastCrawlTime": "2026-11-22T16:18:36Z",
+        "pageFetchState": "SUCCESSFUL",
+        "robotsTxtState": "ALLOWED",
+        "unknown": [],
+        "url": "https://www.mansaodolago.com/index.html",
+        "verdict": "NEUTRAL"
+      },
+      {
         "classification": "ok",
         "coverageState": "Enviada e indexada",
         "errors": [],
@@ -3756,20 +3784,20 @@
   },
   "source": {
     "algorithm": "sha256-lf-manifest",
-    "digest": "4e65be5a592ffef745e1b5bd03170f804be6706b05edf0ba510ef52b1c9b7355",
+    "digest": "8cffac3f807fc792e5b616ae263d8f06c2f0e8ddc7775da07d0fb6ff0cd16747",
     "files": {
       "__init__.py": "4f13dade5394985c5c98127ca2a95ecd9cc98126ccf88a00cd8147be0b116e6e",
       "__main__.py": "a83add0e916979a8abe517294cf14a2451930f5e84c6ba60ebd80f0daf14ba33",
-      "crawler.py": "0c927236a3e241d0f511069e3fd9112dc99792d28d813f7a3d729cf26f691a31",
+      "crawler.py": "22186fa6feda476ebbadf365e30f2b54f62994d9d8a49f56a53e717199219cd0",
       "models.py": "1aaa35c2449691119bc41b142911a334dbb3b02b4ceccc2970addcafd484f585",
       "provenance.py": "f05fef3fcb5aa4f3c360c34a3925a1c0a08d15964c174bca3acf20b4b8bb5016",
-      "report.py": "37e7357966abacf0b8996d5304b04715d30ad4776676c03ebd425b4f8e4796b7",
+      "report.py": "c87b60ff681b81cfa9a9995d0638ff930cbfc2b99f7f8fc7c5fc500012b543c1",
       "requirements.txt": "3810d4485ef81500d3a8bc7eeb8bddf86141a859c4c2e70e371de3ef66d33f54",
       "sanitize.py": "ff3888ac057e26a9741955c692855a9c3e02504b955a03f5dc1f959d825c363b",
-      "search_console.py": "932bff896072b99dd19e0f295a68e64668803a8d69e070de7835f3a798b1a158",
+      "search_console.py": "d4e6a1f0637ee63413be20d50a194568316757f32a3fcd66a7f92e307a5339c9",
       "secret_source.py": "f76abc77636dec0edee14f70a9241742077bf66f9ac2de03c7adb7a94e4aad9f"
     },
-    "matchesCommit": false,
+    "matchesCommit": true,
     "root": "scripts/seo_audit"
   },
   "ticket": "MDL-01"

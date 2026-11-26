@@ -1,7 +1,7 @@
 # Auditoria SEO — MDL-01
 
-Gerado: 2026-11-26T17:37:28.894044Z · Commit base: `d7f07e6fd20d19e452eb70756646ec0fd14e10a9`
-Fontes executadas (sha256-lf-manifest, `scripts/seo_audit`): `4e65be5a592ffef745e1b5bd03170f804be6706b05edf0ba510ef52b1c9b7355` · identicas ao commit base: nao
+Gerado: 2026-11-26T17:57:52.905395Z · Commit base: `671e3fd053c57090f1a652fcb59d4c1e0719bb9d`
+Fontes executadas (sha256-lf-manifest, `scripts/seo_audit`): `8cffac3f807fc792e5b616ae263d8f06c2f0e8ddc7775da07d0fb6ff0cd16747` · identicas ao commit base: sim
 Propriedade: `sc-domain:mansaodolago.com` · Periodo: 2026-10-27 a 2026-11-23
 URL-base: https://mansaodolago.com
 
@@ -42,6 +42,7 @@ URL-base: https://mansaodolago.com
 
 | URL | Classificacao | Veredito | Cobertura | Evidencia |
 |---|---|---|---|---|
+| https://mansaodolago.com/ | error | NEUTRAL | Página com redirecionamento | erros: verdict; desconhecidos:  |
 | https://www.mansaodolago.com/ | ok | PASS | Enviada e indexada | erros: ; desconhecidos:  |
 | https://www.mansaodolago.com/blog/ | ok | PASS | Enviada e indexada | erros: ; desconhecidos:  |
 | https://www.mansaodolago.com/blog/eventos-corporativos-residencia-perdizes.html | ok | PASS | Enviada e indexada | erros: ; desconhecidos:  |
@@ -75,6 +76,7 @@ URL-base: https://mansaodolago.com
 | https://www.mansaodolago.com/galeria.html | ok | PASS | Enviada e indexada | erros: ; desconhecidos:  |
 | https://www.mansaodolago.com/historia.html | ok | PASS | Enviada e indexada | erros: ; desconhecidos:  |
 | https://www.mansaodolago.com/hospedagem.html | ok | PASS | Enviada e indexada | erros: ; desconhecidos:  |
+| https://www.mansaodolago.com/index.html | error | NEUTRAL | Página com redirecionamento | erros: verdict; desconhecidos:  |
 | https://www.mansaodolago.com/natureza.html | ok | PASS | Enviada e indexada | erros: ; desconhecidos:  |
 
 ## Crawl
@@ -171,6 +173,11 @@ Documentos: 1 · URLs declaradas: 30 · nao alcancadas: 0
 ## Achados priorizados
 
 ### P1 · alta · Erro de indexacao
+- URL/evidencia: `https://mansaodolago.com/` — verdict
+- Impacto: A URL pode nao aparecer nos resultados de busca.
+- Recomendacao: Investigar o estado indicado no Search Console e corrigir a causa antes de solicitar nova indexacao.
+
+### P1 · alta · Erro de indexacao
 - URL/evidencia: `https://www.mansaodolago.com/blog/index.html` — verdict
 - Impacto: A URL pode nao aparecer nos resultados de busca.
 - Recomendacao: Investigar o estado indicado no Search Console e corrigir a causa antes de solicitar nova indexacao.
@@ -202,6 +209,11 @@ Documentos: 1 · URLs declaradas: 30 · nao alcancadas: 0
 
 ### P1 · alta · Erro de indexacao
 - URL/evidencia: `https://www.mansaodolago.com/es/index.html` — verdict
+- Impacto: A URL pode nao aparecer nos resultados de busca.
+- Recomendacao: Investigar o estado indicado no Search Console e corrigir a causa antes de solicitar nova indexacao.
+
+### P1 · alta · Erro de indexacao
+- URL/evidencia: `https://www.mansaodolago.com/index.html` — verdict
 - Impacto: A URL pode nao aparecer nos resultados de busca.
 - Recomendacao: Investigar o estado indicado no Search Console e corrigir a causa antes de solicitar nova indexacao.
 
@@ -319,5 +331,5 @@ Documentos: 1 · URLs declaradas: 30 · nao alcancadas: 0
 
 Crawl limitado a 200 paginas e a URLs publicamente alcancaveis/encontradas no sitemap.
 Search Analytics retorna as linhas disponibilizadas pela API para as consultas paginadas; dados agregados podem nao coincidir com a soma das linhas por pagina devido a limites/privacidade da API.
-URL Inspection: 34 URLs inspecionadas; estados unknown permanecem inconclusivos e nao foram interpretados como erro.
+URL Inspection: 36 URLs inspecionadas; estados unknown permanecem inconclusivos e nao foram interpretados como erro.
 Confirme achados inconclusivos diretamente no Search Console antes de aplicar correcoes.
